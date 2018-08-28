@@ -219,4 +219,5 @@ func main() {
 		// Start scraping on http://www.cnhan.com/shantui/
 		c.Visit(todayUrl)
 	}
+
 }
