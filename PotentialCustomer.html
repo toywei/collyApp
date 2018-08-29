@@ -1,0 +1,79 @@
+{{define "PotentialCustomer"}}
+<!DOCTYPE html>
+<html lang="zh-cmn-Hans">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=0">
+    <title>潜在客户信息</title>
+    <link rel="stylesheet" href="/static/WeUI_files/weui.css">
+    <link rel="stylesheet" href="/static/WeUI_files/example.css">
+</head>
+<body style="margin:1em ;">
+<div class="weui-cells page__category-content">
+    <div class="page__hd">
+        <h1 class="page__title">潜在客户信息</h1>
+        <p class="page__desc">潜在客户信息</p>
+    </div>
+</div>
+
+<div class="weui-cells page__category-content">
+    <div class="weui-cells page__category-content">
+        <div class="weui-cell weui-cell_swiped">
+            <div class="weui-flex">
+                <div class="weui-flex__item">
+                    <h3 class="title">公司名称</h3>
+                </div>
+                <div class="weui-flex__item">
+                    <h3 class="title">电话号码</h3>
+                </div>
+                <div class="weui-flex__item">
+                    <h3 class="title">手机号码</h3>
+                </div>
+                <div class="weui-flex__item">
+                    <h3 class="title">QQ号码</h3>
+                </div>
+                <div class="weui-flex__item">
+                    <h3 class="title">微信二维码</h3>
+                </div>
+                <div class="weui-flex__item">
+                    <h3 class="title">地址</h3>
+                </div>
+                <div class="weui-flex__item">
+                    <h3 class="title">网址</h3>
+                </div>
+            </div>
+        </div>
+    {{range .}}
+        <div class="weui-cell weui-cell_swiped">
+            <div class="weui-flex">
+                <div class="weui-flex__item">
+                    <div class="placeholder">{{.ComName}}</div>
+                </div>
+                <div class="weui-flex__item">
+                    <div class="placeholder">{{.TelPhone}}</div>
+                    <img src="{{.TelImgbase64}}">
+                </div>
+                <div class="weui-flex__item">
+                    <div class="placeholder">{{.MobilePhone}}</div>
+                    <img src="{{.PhoneImgbase64}}">
+                </div>
+                <div class="weui-flex__item">
+                    <div class="placeholder">{{.Qq}}</div>
+                </div>
+                <div class="weui-flex__item">
+                    <img src="{{.WxImgbase64}}">
+                </div>
+                <div class="weui-flex__item">
+                    <div class="placeholder">{{.Addr}}</div>
+                </div>
+                <div class="weui-flex__item">
+                    <a href="{{.WebSite}}" target="_blank">{{.WebSite}}</a>
+                </div>
+            </div>
+        </div>
+    {{end}}
+    </div>
+</div>
+</body>
+</html>
+{{end}}

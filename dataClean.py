@@ -1,5 +1,5 @@
 from pymongo import MongoClient
-from  bs4 import BeautifulSoup
+import base64
 import requests
 
 
@@ -29,45 +29,54 @@ def updateOne(filter_id, update, collection_name,
         print(e)
 
 
-'''
-telImg': telImg, 'phoneImg': phoneImg,
-                            'wxImg
-'''
-
-# cleanData = selectToDic('_id', 'todayUrls',
-#                       fields={'url': 1, 'comInfo': 1, 'comInfoTxt': 1, 'telImg': 1, 'phoneImg': 1, 'wxImg': 1},
-#                       where={'spiderDate': '20180829'})
+def updateOneIdKV(Id, k, v, tab='todayUrls'):
+    print(k)
+    updateOne(Id, {k: v}, tab)
 
 
+def webImgToBase64Str(imgUrl):
+    try:
+        r = requests.get(imgUrl)
+        imgByte = r.content
+        b64encode = base64.b64encode(imgByte)
+        # 'data:image/jpg;base64,' OK
+        Base64Str = 'data:image/png;base64,' + b64encode.decode('utf-8')
+        return Base64Str
+    except Exception as e:
+        time.sleep(1)
+        print(e)
+        return ''
+
+import time
+# 请求图片
+cleanData = selectToDic('_id', 'todayUrls', fields={'url': 1, 'telImg': 1, 'phoneImg': 1, 'wxImg': 1})
+for i in cleanData:
+    _id = i
+    item = cleanData[i]
+    kl = ['telImg', 'phoneImg', 'wxImg']
+    for k in kl:
+        if k in item:
+            time.sleep(0.1)
+            imgUrl = item[k]
+            webImgToBase64Str(imgUrl)
+            Base64Str = webImgToBase64Str(imgUrl)
+            if Base64Str != '':
+                updateOneIdKV(_id, '{}base64'.format(k), Base64Str)
+                print(_id)
+                print(item['url'])
+                # print(imgUrl)
+                # print(Base64Str)
 
 # http://www.cnhan.com/hyzx/20180829/7138924.html 直接取comInfoTxt
 # http://www.cnhan.com/shantui/mrOzcDD/news-63027.html  取comInfo，转json-dict结构
 # http://www.cnhan.com/pinfo/company-72947-contact.html 直接取comInfoTxt
 
-
-
-'''
-# 请求图片 
-cleanData = selectToDic('_id', 'todayUrls',
-                      fields={'url': 1, 'telImg': 1, 'phoneImg': 1, 'wxImg': 1, 'spiderDate': 1},
-                      )
-img_l = [cleanData[i] for i in cleanData if 'telImg' in cleanData[i]]
-for i in img_l:
-    telImg, phoneImg, wxImg = i['telImg'], i['phoneImg'], i['wxImg']
-'''
-
-# mongo where 过滤
 cleanData = selectToDic('_id', 'todayUrls', fields={'url': 1, 'comInfo': 1, 'comInfoTxt': 1, 'comName': 1})
-import json
-
-
-def updateOneIdKV(Id, k, v, tab='todayUrls'):
-    updateOne(Id, {k: v}, tab)
-
 
 for i in cleanData:
+    break
     _id = i
-    updateOne(_id, {'cleanData': {}}, 'todayUrls')
+    # updateOne(_id, {'cleanData': {}}, 'todayUrls')
 
     item = cleanData[i]
     url = item['url']

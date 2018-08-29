@@ -14,13 +14,19 @@ import (
 	"log"
 )
 
+// var imgBase64 template.URL
+// telImg', 'phoneImg', 'wxImg'
+// base64  图片图片显示
 type PotentialCustomerClean struct {
-	ComName     string `bson:"comName"`
-	TelPhone    string `bson:"telPhone"`
-	MobilePhone string `bson:"mobilePhone"`
-	Addr        string `bson:"addr"`
-	WebSite     string `bson:"webSite"`
-	Qq          string `bson:"qq"`
+	ComName        string       `bson:"comName"`
+	TelPhone       string       `bson:"telPhone"`
+	MobilePhone    string       `bson:"mobilePhone"`
+	Addr           string       `bson:"addr"`
+	WebSite        string       `bson:"webSite"`
+	Qq             string       `bson:"qq"`
+	WxImgbase64    template.URL `bson:"wxImgbase64"`
+	PhoneImgbase64 template.URL `bson:"phoneImgbase64"`
+	TelImgbase64   template.URL `bson:"telImgbase64"`
 }
 
 //zaimongodb中为一个key
@@ -221,12 +227,14 @@ func main() {
 		session.SetMode(mgo.Monotonic, true)
 		Collection := session.DB("hbase").C("todayUrls")
 		var resultSOnline [] PotentialCustomerClean
+
 		err = Collection.Find(bson.M{"spiderDate": spiderDate}).All(&resultSOnline)
 		if err != nil {
 			log.Fatal(err)
 		}
 		// TODO 当日重复客户资料过滤：同平台的重复、跨平台的重复
 		fmt.Println(resultSOnline)
+
 		return c.Render(http.StatusOK, "PotentialCustomer", resultSOnline)
 	})
 
