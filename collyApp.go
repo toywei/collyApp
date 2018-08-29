@@ -12,6 +12,10 @@ import (
 	"github.com/mongodb/mongo-go-driver/bson"
 
 	"context"
+
+	"log"
+	"gopkg.in/mgo.v2"
+	mgoBson "gopkg.in/mgo.v2/bson"
 )
 
 /*
@@ -26,8 +30,53 @@ http://www.heze.cn/qiye/
 采集站点当日更新数据的客户联系方式
 
 */
+
+type PotentialCustomerWebSiteUrl struct {
+	Url string `bson:"url"`
+}
+
+func getTodaySpideredUrl() []string {
+	//查询mongodb数据
+	session, err := mgo.Dial("mongodb://hbaseU:123@192.168.3.103:27017/hbase")
+	if err != nil {
+		panic(err)
+	}
+	defer session.Close()
+	// Optional. Switch the session to a monotonic behavior.
+	session.SetMode(mgo.Monotonic, true)
+	Collection := session.DB("hbase").C("todayUrls")
+	var PotentialCustomerWebSiteUrls [] PotentialCustomerWebSiteUrl
+
+	spiderDate := time.Now().Format("20060102")
+	err = Collection.Find(mgoBson.M{"spiderDate": spiderDate}).All(&PotentialCustomerWebSiteUrls)
+	if err != nil {
+		log.Fatal(err)
+	}
+	var PotentialCustomerWebSiteUrlSet [] string
+	for i, v := range PotentialCustomerWebSiteUrls {
+		fmt.Println(i)
+		fmt.Println(v.Url)
+		PotentialCustomerWebSiteUrlSet = append(PotentialCustomerWebSiteUrlSet, v.Url)
+	}
+
+	return PotentialCustomerWebSiteUrlSet
+}
+
+// 检查元素是否存在于数组？遍历？如何集合运算方法
+func eleInArr(ele string, arr [] string) bool {
+	for _, v := range arr {
+		if (ele == v) {
+			fmt.Println("eleInArr", ele)
+			return true
+		}
+	}
+	return false
+}
+
 func getTodayUrls() []string {
 	var todayUrls []string
+	PotentialCustomerWebSiteUrlSet := getTodaySpideredUrl()
+
 	// Instantiate default collector
 	c := colly.NewCollector(
 		colly.AllowedDomains("www.cnhan.com"),
@@ -37,8 +86,11 @@ func getTodayUrls() []string {
 	//url仅在本页
 	c.OnHTML(".showSort a[href]", func(e *colly.HTMLElement) {
 		link := e.Attr("href")
-		todayUrls = append(todayUrls, link)
-		fmt.Printf("Link found: %q -> %s\n", e.Text, link)
+		t := eleInArr(link, PotentialCustomerWebSiteUrlSet)
+		if (!t) {
+			todayUrls = append(todayUrls, link)
+			fmt.Printf("Link found: %q -> %s\n", e.Text, link)
+		}
 	})
 
 	// Start scraping on http://www.cnhan.com/shantui/
@@ -69,7 +121,11 @@ func getTodayUrls() []string {
 		regRes := len(data)
 		if regRes > 0 {
 			link = "http://www.cnhan.com/hyzx/" + link
-			todayUrls = append(todayUrls, link)
+			t := eleInArr(link, PotentialCustomerWebSiteUrlSet)
+			if (!t) {
+				todayUrls = append(todayUrls, link)
+				fmt.Printf("Link found: %q -> %s\n", e.Text, link)
+			}
 		}
 	})
 
@@ -106,7 +162,11 @@ func getTodayUrls() []string {
 			link := e.Attr("href")
 			link = "http://www.cnhan.com" + link
 			fmt.Printf("Link found: %q -> %s\n", e.Text, link)
-			todayUrls = append(todayUrls, link)
+			t := eleInArr(link, PotentialCustomerWebSiteUrlSet)
+			if (!t) {
+				todayUrls = append(todayUrls, link)
+				fmt.Printf("Link found: %q -> %s\n", e.Text, link)
+			}
 		}
 	})
 
@@ -163,7 +223,7 @@ func getTodayUrls() []string {
 		),
 	)
 	// On every a element which has href attribute call callback
- 	c.OnHTML("a[href]", func(e *colly.HTMLElement) {
+	c.OnHTML("a[href]", func(e *colly.HTMLElement) {
 		link := e.Attr("href")
 		fmt.Printf("Link found: %q -> %s\n", e.Text, link)
 		c.Visit(e.Request.AbsoluteURL(link))
@@ -173,7 +233,11 @@ func getTodayUrls() []string {
 		regRes := len(data)
 		if regRes > 0 {
 			fmt.Printf("Link found: %q -> %s\n", e.Text, link)
-			todayUrls = append(todayUrls, link)
+			t := eleInArr(link, PotentialCustomerWebSiteUrlSet)
+			if (!t) {
+				todayUrls = append(todayUrls, link)
+				fmt.Printf("Link found: %q -> %s\n", e.Text, link)
+			}
 		}
 	})
 
@@ -189,25 +253,26 @@ func getTodayUrls() []string {
 }
 
 func main() {
+
 	var todayUrls = getTodayUrls()
 	fmt.Println(todayUrls)
 	fmt.Println(len(todayUrls))
-
-	//网页快照写入mongo，认为数据采集，除了二进制图像外，结束
-	//剩余的html网页内容提取、手机号的图片ocr郊游python处理
-	for  _,todayUrl := range todayUrls{
+	for _, todayUrl := range todayUrls {
 		// Instantiate default collector
 		c := colly.NewCollector()
 		// On every a element which has href attribute call callback
 		c.OnScraped(func(r *colly.Response) {
-			reqUrl:=fmt.Sprintln(r.Request.URL)
+			reqUrl := fmt.Sprintln(r.Request.URL)
 			strings.Replace(reqUrl, "\n", "", -1)
 			wholePageHtml := string(r.Body)
 			//client, err := mongo.Connect(context.Background(), "mongodb://192.168.3.103:27017?username=hbaseU&password=123", nil)
 			client, err := mongo.Connect(context.Background(), "mongodb://hbaseU:123@192.168.3.103:27017/hbase", nil)
 			db := client.Database("hbase")
 			coll := db.Collection("todayUrls")
-			//当天多次采集，当天url不重复入库
+			if err != nil {
+				fmt.Println(err)
+			}
+			//当天多次采集，当天同站点且同路径url不重复入库
 			//存入时间戳，分析目标站点的信息更新规律
 			result, err := coll.InsertOne(
 				context.Background(),
@@ -218,10 +283,8 @@ func main() {
 				))
 			fmt.Println(err)
 			fmt.Println(result)
-			fmt.Println(db)
 		})
 		// Start scraping on http://www.cnhan.com/shantui/
 		c.Visit(todayUrl)
 	}
-
 }

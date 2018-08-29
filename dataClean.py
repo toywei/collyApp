@@ -1,6 +1,8 @@
 from pymongo import MongoClient
 import base64
 import requests
+import json
+import random
 
 
 def selectToDic(k, collection_name, fields={}, where={},
@@ -43,20 +45,23 @@ def webImgToBase64Str(imgUrl):
         Base64Str = 'data:image/png;base64,' + b64encode.decode('utf-8')
         return Base64Str
     except Exception as e:
-        time.sleep(1)
+        time.sleep(random.random() + 1)
         print(e)
         return ''
 
+
 import time
+
 # 请求图片
-cleanData = selectToDic('_id', 'todayUrls', fields={'url': 1, 'telImg': 1, 'phoneImg': 1, 'wxImg': 1})
+cleanData = selectToDic('_id', 'todayUrls', fields={'url': 1, 'telImg': 1, 'phoneImg': 1, 'wxImg': 1},
+                        where={'spiderDate': '20180829'})
 for i in cleanData:
     _id = i
     item = cleanData[i]
     kl = ['telImg', 'phoneImg', 'wxImg']
     for k in kl:
-        if k in item:
-            time.sleep(0.1)
+        kk = '{}base64'.format(k)
+        if k in item and kk not in item:
             imgUrl = item[k]
             webImgToBase64Str(imgUrl)
             Base64Str = webImgToBase64Str(imgUrl)
@@ -64,17 +69,16 @@ for i in cleanData:
                 updateOneIdKV(_id, '{}base64'.format(k), Base64Str)
                 print(_id)
                 print(item['url'])
-                # print(imgUrl)
-                # print(Base64Str)
+            time.sleep(0.1)
 
 # http://www.cnhan.com/hyzx/20180829/7138924.html 直接取comInfoTxt
 # http://www.cnhan.com/shantui/mrOzcDD/news-63027.html  取comInfo，转json-dict结构
 # http://www.cnhan.com/pinfo/company-72947-contact.html 直接取comInfoTxt
 
-cleanData = selectToDic('_id', 'todayUrls', fields={'url': 1, 'comInfo': 1, 'comInfoTxt': 1, 'comName': 1})
+cleanData = selectToDic('_id', 'todayUrls', fields={'url': 1, 'comInfo': 1, 'comInfoTxt': 1, 'comName': 1},
+                        where={'spiderDate': '20180829'})
 
 for i in cleanData:
-    break
     _id = i
     # updateOne(_id, {'cleanData': {}}, 'todayUrls')
 

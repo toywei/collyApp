@@ -2,6 +2,7 @@ from pymongo import MongoClient
 from  bs4 import BeautifulSoup
 import requests
 
+
 def selectToDic(k, collection_name, fields={}, where={},
                 c=MongoClient("mongodb://hbaseU:123@192.168.3.103:27017/hbase"), dbName='hbase'):
     db = c[dbName]
@@ -28,18 +29,20 @@ def updateOne(filter_id, update, collection_name,
         print(e)
 
 
-urlHtml = selectToDic('_id', 'todayUrls', fields={'url': 1, 'html': 1})
+urlHtml = selectToDic('_id', 'todayUrls', fields={'url': 1, 'html': 1}, where={'spiderDate': '20180829'})
+# urlHtml = selectToDic('_id', 'todayUrls', fields={'url': 1, 'html': 1},where={})
 
-res_d = {}
+
 for i in urlHtml:
     _id = i
     url = urlHtml[i]['url'].replace('\n', '')
+    updateOne(_id, {'url': url}, 'todayUrls')
     html = urlHtml[i]['html']
 
     # window.compId = "3644";
     comIdTag = 'window.compId = "'
     if comIdTag in html:
-        continue
+
         compId = html.split(comIdTag)[-1].split('"')[0]
         updateOne(_id, {'comId': compId}, 'todayUrls')
         try:
@@ -52,8 +55,8 @@ for i in urlHtml:
 
     # 客户资料在mogo的html中，但是没有联系方式详情页完整
     plainTag = 'http://www.cnhan.com/hyzx/'
-    if plainTag in html:
-        continue
+    if plainTag in url:
+
         soup = BeautifulSoup(html, 'html.parser')
         _ = soup.find_all('a')
         contactTag = '../contact_'
@@ -87,8 +90,8 @@ for i in urlHtml:
 
     # 客户联系电话在唯普通的可以ocr识别的图片中，但是联系方式详情页存在于可以直接获取的html中
     plainTag = 'http://www.heze.cn/info/'
-    if plainTag in html:
-        continue
+    if plainTag in url:
+
         bizInfoAuthorId = html.split('nav?uid=')[-1].split('"></script>')[0]
         # js 写入http://www.heze.cn/info/index/author/author/1461.html
         # 呈现的页面 http://www.heze.cn/info/product/contactus/id/1461.html
@@ -122,7 +125,7 @@ for i in urlHtml:
     # 入口页 http://www.heze.cn/qiye/15044035888/show-30-4885060.html
     # 联系页 http://www.heze.cn/qiye/sp-15044035888-lianxi.html
     plainTag = 'http://www.heze.cn/qiye/'
-    if plainTag in html:
+    if plainTag in url:
         bizQiyeId = url.split('http://www.heze.cn/qiye/')[-1].split('/')[0]
         contactUrl = 'http://www.heze.cn/qiye/sp-{}-lianxi.html'.format(bizQiyeId)
         updateOne(_id, {'contactUrl': contactUrl, 'bizQiyeId': bizQiyeId}, 'todayUrls')
@@ -148,6 +151,44 @@ for i in urlHtml:
                 telImg, phoneImg, wxImg = [i.attrs['src'].replace('\\', '') for i in soup.find_all('img')[0:3]]
             updateOne(_id, {'comInfoTxt': comInfoTxt, 'jsHtmlCode': jsHtmlCode, 'telImg': telImg, 'phoneImg': phoneImg,
                             'wxImg': wxImg}, 'todayUrls')
+        except Exception as e:
+            print(e)
+            print(url)
+            print(contactUrl)
+
+    # 入口页 http://www.cnhan.com/pinfo/313509.html
+    # 店铺页 http://www.cnhan.com/pinfo/company-67751.html
+    # 联系页 http://www.cnhan.com/pinfo/company-67751-contact.html
+    plainTag = 'http://www.cnhan.com/pinfo/'
+    if plainTag in url:
+        bizPinfoId = html.split('.html">进入店铺')[0].split('company-')[-1]
+        if bizPinfoId == '':
+            siteException = '{} 店铺页面不存在或已删除'.format(url)
+            updateOne(_id, {'siteException': siteException}, 'todayUrls')
+            print(siteException)
+            continue
+
+        contactUrl = 'http://www.cnhan.com/pinfo/company-{}-contact.html'.format(bizPinfoId)
+        updateOne(_id, {'contactUrl': contactUrl, 'bizPinfoId': bizPinfoId}, 'todayUrls')
+        try:
+            r = requests.get(contactUrl)
+            comName = r.text.split('title>')[1].split('-')[-1].split('<')[0]
+            updateOne(_id, {'comName': comName}, 'todayUrls')
+
+            # 已经在页面校验,
+            # 1-出现则唯一;2-出现且出现其中的一个；
+            class_l = ['con_left', 'n_contact']
+            for c_ in class_l:
+                findChk = BeautifulSoup(r.text, 'html.parser').find(class_=c_)
+                if findChk is not None:
+                    comInfoTxt = findChk.text
+                    # dropTag_tail_l = ['']
+                    # for sp in dropTag_tail_l:
+                    #     comInfoTxt = comInfoTxt.split(sp)[0]
+                    #     comName = r.text.split('title>')[1].split('-')[-1].split('<')[0]
+                    #     print(comInfoTxt)
+                    print(comInfoTxt)
+                    updateOne(_id, {'comInfoTxt': comInfoTxt}, 'todayUrls')
         except Exception as e:
             print(e)
             print(url)
