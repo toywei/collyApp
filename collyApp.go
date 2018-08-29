@@ -201,14 +201,18 @@ func main() {
 		// On every a element which has href attribute call callback
 		c.OnScraped(func(r *colly.Response) {
 			reqUrl:=fmt.Sprintln(r.Request.URL)
+			strings.Replace(reqUrl, "\n", "", -1)
 			wholePageHtml := string(r.Body)
 			//client, err := mongo.Connect(context.Background(), "mongodb://192.168.3.103:27017?username=hbaseU&password=123", nil)
 			client, err := mongo.Connect(context.Background(), "mongodb://hbaseU:123@192.168.3.103:27017/hbase", nil)
 			db := client.Database("hbase")
 			coll := db.Collection("todayUrls")
+			//当天多次采集，当天url不重复入库
+			//存入时间戳，分析目标站点的信息更新规律
 			result, err := coll.InsertOne(
 				context.Background(),
 				bson.NewDocument(
+					bson.EC.String("spiderDate", "20180829"),
 					bson.EC.String("url", reqUrl),
 					bson.EC.String("html", wholePageHtml),
 				))

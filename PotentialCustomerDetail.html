@@ -1,0 +1,60 @@
+{{define "PotentialCustomerDetail"}}
+<!DOCTYPE html>
+<html lang="zh-cmn-Hans">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=0">
+    <title>潜在客户信息</title>
+    <link rel="stylesheet" href="/static/WeUI_files/weui.css">
+    <link rel="stylesheet" href="/static/WeUI_files/example.css">
+</head>
+<body style="margin:1em ;">
+<div class="weui-cells page__category-content">
+    <div class="page__hd">
+        <h1 class="page__title">潜在客户信息</h1>
+        <p class="page__desc">潜在客户信息</p>
+    </div>
+</div>
+<div class="weui-cells page__category-content">
+{{range .}}
+    <div class="weui-cell weui-cell_swiped">
+        <div class="weui-flex">
+            <div class="weui-flex__item">
+                <a href="{{.Url}}" target="_blank" class="urlClean">{{.Url}}</a>
+            </div>
+            <div class="weui-flex__item">
+                <a href="{{.ContactUrl}}" target="_blank" class="urlClean">{{.ContactUrl}}</a>
+            </div>
+            <div class="weui-flex__item">
+                <div class="placeholder" class="urlClean">{{.ComInfo}}</div>
+            </div>
+            <div class="weui-flex__item">
+                <div class="placeholder" class="urlClean">{{.ComInfoTxt}}</div>
+            </div>
+            <div class="weui-flex__item" class="urlClean">
+                <img src="{{.TelImg}}" class="urlClean"></div>
+            <div class="weui-flex__item">
+                <img src="{{.PhoneImg}}" class="urlClean"></div>
+            <div class="weui-flex__item">
+                <img src="{{.WxImg}}" class="urlClean"></div>
+        </div>
+    </div>
+{{end}}
+</div>
+</body>
+</html>
+<script>
+    let s = document.getElementsByClassName('urlClean')
+    let c = 0
+    let len = s.length
+    for (let i in s) {
+        console.log(i)
+        let h = i.href
+        s[c].href = h.replace('%0a', '')
+        c += 1
+        if (c === len) {
+            break
+        }
+    }
+</script>
+{{end}}
