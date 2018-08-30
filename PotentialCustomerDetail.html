@@ -41,6 +41,13 @@
     </div>
 {{end}}
 </div>
+
+<div class="weui-cells page__category-content">
+    <div class="page__hd">
+        <div id="goSimple"></div>
+    </div>
+</div>
+
 </body>
 </html>
 <script>
@@ -56,5 +63,15 @@
             break
         }
     }
+</script>
+
+<script>
+    const Ymd = () =>
+    {
+        const date = new Date()
+        const m = ('0' + (date.getMonth() + 1)).slice(-2)
+        return date.getFullYear() + m + date.getDate()
+    }
+    document.getElementById('goSimple').innerHTML = '<a href="/PotentialCustomer/' + Ymd() + '" target="_blank"> 去简页</a>'
 </script>
 {{end}}

@@ -57,15 +57,15 @@ type PotentialCustomerDetail struct {
 }
 
 // 检查元素是否存在于数组？遍历？如何集合运算方法
-func eleInArr(ele string, arr [] string) bool {
-	for _, v := range arr {
-		if (ele == v) {
-			fmt.Println("eleInArr", ele)
-			return true
-		}
-	}
-	return false
-}
+//func eleInArr(ele string, arr [] string) bool {
+//	for _, v := range arr {
+//		if (ele == v) {
+//			fmt.Println("eleInArr", ele)
+//			return true
+//		}
+//	}
+//	return false
+//}
 
 /*
 1.实现 echo.Renderer 接口

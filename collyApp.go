@@ -277,7 +277,7 @@ func main() {
 			result, err := coll.InsertOne(
 				context.Background(),
 				bson.NewDocument(
-					bson.EC.String("spiderDate", "20180829"),
+					bson.EC.String("spiderDate", time.Now().Format("20060102")),
 					bson.EC.String("url", reqUrl),
 					bson.EC.String("html", wholePageHtml),
 				))

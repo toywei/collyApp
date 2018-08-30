@@ -74,6 +74,22 @@
     {{end}}
     </div>
 </div>
+
+<div class="weui-cells page__category-content">
+    <div class="page__hd">
+        <div id="goDetail"></div>
+    </div>
+</div>
+
 </body>
 </html>
+<script>
+    const Ymd = () =>
+    {
+        const date = new Date()
+        const m = ('0' + (date.getMonth() + 1)).slice(-2)
+        return date.getFullYear() + m + date.getDate()
+    }
+    document.getElementById('goDetail').innerHTML = '<a href="/PotentialCustomerDetail/' + Ymd() + '" target="_blank"> 去详情页</a>'
+</script>
 {{end}}

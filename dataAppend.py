@@ -1,7 +1,7 @@
 from pymongo import MongoClient
 from  bs4 import BeautifulSoup
 import requests
-
+import time
 
 def selectToDic(k, collection_name, fields={}, where={},
                 c=MongoClient("mongodb://hbaseU:123@192.168.3.103:27017/hbase"), dbName='hbase'):
@@ -28,8 +28,8 @@ def updateOne(filter_id, update, collection_name,
     except Exception as e:
         print(e)
 
-
-urlHtml = selectToDic('_id', 'todayUrls', fields={'url': 1, 'html': 1}, where={'spiderDate': '20180829'})
+spiderDate=time.strftime("%Y%m%d", time.localtime())
+urlHtml = selectToDic('_id', 'todayUrls', fields={'url': 1, 'html': 1}, where={'spiderDate':spiderDate})
 # urlHtml = selectToDic('_id', 'todayUrls', fields={'url': 1, 'html': 1},where={})
 
 

@@ -52,9 +52,10 @@ def webImgToBase64Str(imgUrl):
 
 import time
 
+spiderDate = time.strftime("%Y%m%d", time.localtime())
 # 请求图片
 cleanData = selectToDic('_id', 'todayUrls', fields={'url': 1, 'telImg': 1, 'phoneImg': 1, 'wxImg': 1},
-                        where={'spiderDate': '20180829'})
+                        where={'spiderDate': spiderDate})
 for i in cleanData:
     _id = i
     item = cleanData[i]
@@ -76,7 +77,7 @@ for i in cleanData:
 # http://www.cnhan.com/pinfo/company-72947-contact.html 直接取comInfoTxt
 
 cleanData = selectToDic('_id', 'todayUrls', fields={'url': 1, 'comInfo': 1, 'comInfoTxt': 1, 'comName': 1},
-                        where={'spiderDate': '20180829'})
+                        where={'spiderDate': spiderDate})
 
 for i in cleanData:
     _id = i
