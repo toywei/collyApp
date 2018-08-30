@@ -12,6 +12,7 @@ import (
 	"gopkg.in/mgo.v2/bson"
 
 	"log"
+	"strings"
 )
 
 // var imgBase64 template.URL
@@ -53,6 +54,17 @@ type PotentialCustomerDetail struct {
 	PhoneImg   string `bson:"phoneImg"`
 	WxImg      string `bson:"wxImg"`
 	SpiderDate string `bson:"spiderDate"`
+}
+
+// 检查元素是否存在于数组？遍历？如何集合运算方法
+func eleInArr(ele string, arr [] string) bool {
+	for _, v := range arr {
+		if (ele == v) {
+			fmt.Println("eleInArr", ele)
+			return true
+		}
+	}
+	return false
 }
 
 /*
@@ -227,16 +239,30 @@ func main() {
 		session.SetMode(mgo.Monotonic, true)
 		Collection := session.DB("hbase").C("todayUrls")
 		var resultSOnline [] PotentialCustomerClean
-
 		err = Collection.Find(bson.M{"spiderDate": spiderDate}).All(&resultSOnline)
 		if err != nil {
 			log.Fatal(err)
 		}
+
 		// TODO 当日重复客户资料过滤：同平台的重复、跨平台的重复
 		fmt.Println(resultSOnline)
 
-		return c.Render(http.StatusOK, "PotentialCustomer", resultSOnline)
+		var comSet [] string
+		var showSet [] PotentialCustomerClean
+		for _, v := range resultSOnline {
+			chkName := v.ComName
+			strings.Replace(chkName, "\n", "", -1)
+			fmt.Println(chkName)
+			if (chkName != "") {
+				t := eleInArr(chkName, comSet)
+				if (!t) {
+					comSet = append(comSet, chkName)
+					showSet = append(showSet, v)
+				}
+			}
+		}
+		return c.Render(http.StatusOK, "PotentialCustomer", showSet)
 	})
 
-	e.Logger.Fatal(e.Start(":1324"))
+	e.Logger.Fatal(e.Start(":1325"))
 }
