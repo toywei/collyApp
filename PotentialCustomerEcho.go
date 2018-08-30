@@ -13,12 +13,38 @@ import (
 
 	"log"
 	"strings"
+	"strconv"
 )
+
+func HtmlIndexNum(intStr string) int {
+	i, err := strconv.Atoi(intStr)
+	i = i + 1
+	if err != nil {
+		panic(err)
+	}
+	return i
+}
+
+// 自定义模板函数
+//var funcMap = template.FuncMap{
+//	// rangge index + 1
+//	"HtmlIndexNum": func(intStr string) int {
+//		i, err := strconv.Atoi(intStr)
+//		i = i + 1
+//		if err != nil {
+//			panic(err)
+//		}
+//		return i
+//	},
+//}
+
+
 
 // var imgBase64 template.URL
 // telImg', 'phoneImg', 'wxImg'
 // base64  图片图片显示
 type PotentialCustomerClean struct {
+	OriginUrl      string       `bson:"url"`
 	ComName        string       `bson:"comName"`
 	TelPhone       string       `bson:"telPhone"`
 	MobilePhone    string       `bson:"mobilePhone"`
@@ -57,24 +83,42 @@ type PotentialCustomerDetail struct {
 }
 
 // 检查元素是否存在于数组？遍历？如何集合运算方法
-//func eleInArr(ele string, arr [] string) bool {
-//	for _, v := range arr {
-//		if (ele == v) {
-//			fmt.Println("eleInArr", ele)
-//			return true
-//		}
-//	}
-//	return false
-//}
+func eleInArr(ele string, arr [] string) bool {
+	for _, v := range arr {
+		if (ele == v) {
+			fmt.Println("eleInArr", ele)
+			return true
+		}
+	}
+	return false
+}
 
 /*
 1.实现 echo.Renderer 接口
 */
+/*
+		"HtmlIndexNum":func (intStr string) int {
+			i, err := strconv.Atoi(intStr)
+			i = i + 1
+			if err != nil {panic(err)}
+			return i
+		}}
+
+*/
+
+
 type Template struct {
 	templates *template.Template
 }
 
+// Render renders a template document
 func (t *Template) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
+
+	// Add global methods if data is a map
+	if viewContext, isMap := data.(map[string]interface{}); isMap {
+		viewContext["reverse"] = c.Echo().Reverse
+	}
+
 	return t.templates.ExecuteTemplate(w, name, data)
 }
 
@@ -99,10 +143,6 @@ func (c *CustomContext) Foo() {
 	println("foo")
 }
 
-func (c *CustomContext) Bar() {
-	println("bar")
-}
-
 type ScriptStruct struct {
 	Host       string
 	Port       int
@@ -121,20 +161,29 @@ func (c *CustomContext) DumpScripts() {
 	//ScriptArr[2] = ScriptStruct{"192.168.3.123", 8088, "/home/goDev/spider/", "spiderChkurl.go"}
 }
 
+
 func main() {
 	/*
 	2.预编译模板
 	*/
+
 	t := &Template{
 		templates: template.Must(template.ParseGlob("goEchopublic/views/*.html")),
 	}
 
+	//t := &Template{
+	//	templates: template,
+	//}
+	//t:=template.Template
+	//Func := template.FuncMap{"HtmlIndexNum": HtmlIndexNum}   //把定义的函数实例
+	//t.Funcs(Func)
+	//t.Must(template.ParseGlob("goEchopublic/views/*.html"))
 	/*
 	3.注册模板
 	*/
 	e := echo.New()
 	e.Renderer = t
-
+	fmt.Println(t)
 	/*
 	静态文件
 	Echo#Static(prefix, root string) 用一个 url 路径注册一个新的路由来提供静态文件的访问服务。root 为文件根目录。
@@ -164,14 +213,9 @@ func main() {
 	*/
 	e.GET("/scriptAdmin01", Hello)
 
-	e.GET("/WeUI", func(c echo.Context) error {
-		fmt.Println("test-")
-		return c.Render(http.StatusOK, "WeUI", "data--")
-	})
 	e.GET("/scriptAdmin", func(c echo.Context) error {
 		cc := c.(*CustomContext)
 		cc.Foo()
-		cc.Bar()
 		cc.DumpScripts()
 		fmt.Println(ScriptArr)
 		return c.Render(http.StatusOK, "hello", s2)
@@ -189,22 +233,17 @@ func main() {
 		fmt.Println(uid)
 		cc := c.(*CustomContext)
 		cc.DumpScripts()
-
 		msg := "uid:" + uid + "处理中。。。进度xxx"
 		fmt.Println(msg)
-
 		return c.Render(http.StatusOK, "tmp", msg)
 	})
+	// Named route "foobar"
+	e.GET("/something", func(c echo.Context) error {
+		return c.Render(http.StatusOK, "something.html", map[string]interface{}{
+			"name": "Dolly!",
+		})
+	}).Name = "foobar"
 
-	/*
-		e.GET("/GetDBHtmlCode/:iid", func(c echo.Context) error {
-		info_id := c.Param("iid")
-		cc := c.(*CustomContext)
-		cc.GetDBHtmlCode(info_id)
-		return c.Render(http.StatusOK, "DBHtmlCode", DBHtmlCode)
-	})
-
-	*/
 	e.GET("/PotentialCustomerDetail/:spiderDate", func(c echo.Context) error {
 		spiderDate := c.Param("spiderDate")
 
@@ -222,13 +261,11 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-
 		return c.Render(http.StatusOK, "PotentialCustomerDetail", resultSOnline)
 	})
 
 	e.GET("/PotentialCustomer/:spiderDate", func(c echo.Context) error {
 		spiderDate := c.Param("spiderDate")
-
 		//查询mongodb数据
 		session, err := mgo.Dial("mongodb://hbaseU:123@192.168.3.103:27017/hbase")
 		if err != nil {
@@ -246,7 +283,6 @@ func main() {
 
 		// TODO 当日重复客户资料过滤：同平台的重复、跨平台的重复
 		fmt.Println(resultSOnline)
-
 		var comSet [] string
 		var showSet [] PotentialCustomerClean
 		for _, v := range resultSOnline {
@@ -263,6 +299,5 @@ func main() {
 		}
 		return c.Render(http.StatusOK, "PotentialCustomer", showSet)
 	})
-
-	e.Logger.Fatal(e.Start(":1325"))
+	e.Logger.Fatal(e.Start(":1326"))
 }

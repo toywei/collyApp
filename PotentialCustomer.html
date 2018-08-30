@@ -7,7 +7,14 @@
     <title>潜在客户信息</title>
     <link rel="stylesheet" href="/static/WeUI_files/weui.css">
     <link rel="stylesheet" href="/static/WeUI_files/example.css">
-</head>
+</head><style>
+    .rowHover:hover {
+        background-color: #09BB07;
+    }
+    .selectItem{
+        color:#1E90FF
+    }
+</style>
 <body style="margin:1em ;">
 <div class="weui-cells page__category-content">
     <div class="page__hd">
@@ -16,80 +23,145 @@
     </div>
 </div>
 
-<div class="weui-cells page__category-content">
-    <div class="weui-cells page__category-content">
-        <div class="weui-cell weui-cell_swiped">
-            <div class="weui-flex">
-                <div class="weui-flex__item">
-                    <h3 class="title">公司名称</h3>
-                </div>
-                <div class="weui-flex__item">
-                    <h3 class="title">电话号码</h3>
-                </div>
-                <div class="weui-flex__item">
-                    <h3 class="title">手机号码</h3>
-                </div>
-                <div class="weui-flex__item">
-                    <h3 class="title">QQ号码</h3>
-                </div>
-                <div class="weui-flex__item">
-                    <h3 class="title">微信二维码</h3>
-                </div>
-                <div class="weui-flex__item">
-                    <h3 class="title">地址</h3>
-                </div>
-                <div class="weui-flex__item">
-                    <h3 class="title">网址</h3>
-                </div>
-            </div>
-        </div>
-    {{range .}}
-        <div class="weui-cell weui-cell_swiped">
-            <div class="weui-flex">
-                <div class="weui-flex__item">
-                    <div class="placeholder">{{.ComName}}</div>
-                </div>
-                <div class="weui-flex__item">
-                    <div class="placeholder">{{.TelPhone}}</div>
-                    <img src="{{.TelImgbase64}}">
-                </div>
-                <div class="weui-flex__item">
-                    <div class="placeholder">{{.MobilePhone}}</div>
-                    <img src="{{.PhoneImgbase64}}">
-                </div>
-                <div class="weui-flex__item">
-                    <div class="placeholder">{{.Qq}}</div>
-                </div>
-                <div class="weui-flex__item">
-                    <img src="{{.WxImgbase64}}">
-                </div>
-                <div class="weui-flex__item">
-                    <div class="placeholder">{{.Addr}}</div>
-                </div>
-                <div class="weui-flex__item">
-                    <a href="{{.WebSite}}" target="_blank">{{.WebSite}}</a>
-                </div>
-            </div>
-        </div>
-    {{end}}
-    </div>
+<div id="urlPlatformListHtml" class="weui-cell weui-cell_select" >
 </div>
 
+<div class="weui-cells page__category-content">
+    <div class="weui-cell weui-cell_swiped">
+        <div class="weui-flex">
+            <div class="weui-flex__item">
+                <h3 class="title">序号</h3>
+            </div>
+            <div class="weui-flex__item">
+                <h3 class="title">来源URL</h3>
+            </div>
+            <div class="weui-flex__item">
+                <h3 class="title">公司名称</h3>
+            </div>
+            <div class="weui-flex__item">
+                <h3 class="title">电话号码</h3>
+            </div>
+            <div class="weui-flex__item">
+                <h3 class="title">手机号码</h3>
+            </div>
+            <div class="weui-flex__item">
+                <h3 class="title">QQ号码</h3>
+            </div>
+            <div class="weui-flex__item">
+                <h3 class="title">微信二维码</h3>
+            </div>
+            <div class="weui-flex__item">
+                <h3 class="title">地址</h3>
+            </div>
+            <div class="weui-flex__item">
+                <h3 class="title">网址</h3>
+            </div>
+        </div>
+    </div>
+    <div id="initHtml">
+    </div>
+</div>
 <div class="weui-cells page__category-content">
     <div class="page__hd">
         <div id="goDetail"></div>
     </div>
 </div>
-
 </body>
 </html>
+
 <script>
-    const Ymd = () =>
-    {
-        const date = new Date()
-        const m = ('0' + (date.getMonth() + 1)).slice(-2)
-        return date.getFullYear() + m + date.getDate()
+    var GO = {{.}}
+</script>
+<script>
+    // 筛选器清单
+    const urlPlatformList = ["全部", 'http://www.cnhan.com/hyzx/', 'http://www.cnhan.com/shantui/', 'http://www.cnhan.com/pinfo/', 'http://www.heze.cn/info', 'http://www.heze.cn/qiye/']
+
+    // 页面首次加载
+    let urlPlatformListHtml = '<div class="weui-cell__bd">选择来源平台<select class="weui-select selectItem" name="selectUrlPlatform"  onclick=getSelectValue(this) >'
+    for (let i in urlPlatformList) {
+        let selectedStr = ''
+        if (i === 0) {
+            selectedStr = 'selected'
+        }
+        urlPlatformListHtml += '<option  value="' + i  + '" '+selectedStr+' >' + urlPlatformList[i] + '</option>'
     }
-    document.getElementById('goDetail').innerHTML = '<a href="/PotentialCustomerDetail/' + Ymd() + '" target="_blank"> 去详情页</a>'
+    urlPlatformListHtml += '</select></div>'
+    document.getElementById('urlPlatformListHtml').innerHTML = urlPlatformListHtml
+
+    // 筛选器选择值初始化
+    let selectOptionUrlPlatform = 0
+
+    // 监听筛选的click事件
+    // 获取筛选器的选中值
+    const getSelectValue = (t) =>
+    {
+        const selectName = t.name
+        const opts = t.options
+        let catchI = 0
+        for (let i in opts) {
+            if (opts[i].selected == true) {
+                catchI = i
+                console.log(catchI)
+                break
+            }
+        }
+        //  筛选器可扩展为多个
+        switch (selectName) {
+            case    'selectUrlPlatform':
+                selectOptionUrlPlatform = catchI
+        }
+        // 事件回调，过滤页面显示项目
+        mainRowIfDisplayByClassSelector()
+    }
+
+    // 判断项目类型
+    const displayType = (url) =>
+    {
+        for (let i in urlPlatformList) {
+            if(parseInt(i)!==0){
+                if (url.indexOf(urlPlatformList[i].slice(1)) > 0) {
+                    return i
+                }
+            }
+        }
+    }
+
+    // 控制display属性
+    // 存在的问题：display属性的赋值与其他属性的覆盖
+    const mainRowIfDisplayByClassSelector = () =>
+    {
+        if (parseInt(selectOptionUrlPlatform) === 0) {
+            let displayType = 'displayTypeInit'
+            let displaySet = document.getElementsByClassName(displayType)
+            for (let ii in displaySet) {
+                console.log(ii)
+                document.getElementsByClassName(displayType)[ii].style = ""
+            }
+        } else {
+            for (let i in urlPlatformList) {
+                let displayType = 'displayType' + i
+                let displaySet = document.getElementsByClassName(displayType)
+                if (selectOptionUrlPlatform !== i) {
+                    for (let ii in displaySet) {
+                        document.getElementsByClassName(displayType)[ii].style = "display:none;"
+                    }
+                } else {
+                    for (let ii in displaySet) {
+                        document.getElementsByClassName(displayType)[ii].style = ""
+                    }
+                }
+            }
+        }
+    }
+
+</script>
+
+<script>
+    let mainHtml = ''
+    // 对类名赋值
+    for (let i in GO) {
+        mainHtml += '<div class="weui-cell weui-cell_swiped"><div class="weui-flex rowHover displayTypeInit displayType' + displayType(GO[i].OriginUrl) + '" ><div class="weui-flex__item"><div class="placeholder">' + (parseInt(i) + 1) + '</div></div> <div class="weui-flex__item"><div class="placeholder"><a href="' + GO[i].OriginUrl + '" target="_blank" >' + GO[i].OriginUrl.slice(7, 23) + '</a></div></div>  <div class="weui-flex__item"><div class="placeholder">' + GO[i].ComName + '</div></div><div class="weui-flex__item"><div class="placeholder">' + GO[i].TelPhone + '</div><img src="' + GO[i].TelImgbase64 + '"></div><div class="weui-flex__item"><div class="placeholder">' + GO[i].MobilePhone + '</div><img src="' + GO[i].PhoneImgbase64 + '"></div><div class="weui-flex__item"><div class="placeholder">' + GO[i].Qq + '</div></div><div class="weui-flex__item"><img src="' + GO[i].WxImgbase64 + '"></div><div class="weui-flex__item"><div class="placeholder">' + GO[i].Addr + '</div></div><div class="weui-flex__item"><a href="' + GO[i].WebSite + '" target="_blank">' + GO[i].WebSite + '</a></div></div></div>'
+    }
+    document.getElementById('initHtml').innerHTML = mainHtml
 </script>
 {{end}}
