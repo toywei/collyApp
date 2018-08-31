@@ -70,7 +70,7 @@
 </html>
 
 <script>
-    var GO = {{.}}
+    const GO = {{.}}
 </script>
 <script>
     // 筛选器清单
@@ -163,5 +163,14 @@
         mainHtml += '<div class="weui-cell weui-cell_swiped"><div class="weui-flex rowHover displayTypeInit displayType' + displayType(GO[i].OriginUrl) + '" ><div class="weui-flex__item"><div class="placeholder">' + (parseInt(i) + 1) + '</div></div> <div class="weui-flex__item"><div class="placeholder"><a href="' + GO[i].OriginUrl + '" target="_blank" >' + GO[i].OriginUrl.slice(7, 23) + '</a></div></div>  <div class="weui-flex__item"><div class="placeholder">' + GO[i].ComName + '</div></div><div class="weui-flex__item"><div class="placeholder">' + GO[i].TelPhone + '</div><img src="' + GO[i].TelImgbase64 + '"></div><div class="weui-flex__item"><div class="placeholder">' + GO[i].MobilePhone + '</div><img src="' + GO[i].PhoneImgbase64 + '"></div><div class="weui-flex__item"><div class="placeholder">' + GO[i].Qq + '</div></div><div class="weui-flex__item"><img src="' + GO[i].WxImgbase64 + '"></div><div class="weui-flex__item"><div class="placeholder">' + GO[i].Addr + '</div></div><div class="weui-flex__item"><a href="' + GO[i].WebSite + '" target="_blank">' + GO[i].WebSite + '</a></div></div></div>'
     }
     document.getElementById('initHtml').innerHTML = mainHtml
+</script>
+<script>
+    const Ymd = () =>
+    {
+        const date = new Date()
+        const m = ('0' + (date.getMonth() + 1)).slice(-2)
+        return date.getFullYear() + m + date.getDate()
+    }
+    document.getElementById('goDetail').innerHTML = '<a href="/PotentialCustomerDetail/' + Ymd() + '" target="_blank"> 去详细页</a>'
 </script>
 {{end}}

@@ -3,6 +3,7 @@ import base64
 import requests
 import json
 import random
+import time
 
 
 def selectToDic(k, collection_name, fields={}, where={},
@@ -50,10 +51,9 @@ def webImgToBase64Str(imgUrl):
         return ''
 
 
-import time
-
 spiderDate = time.strftime("%Y%m%d", time.localtime())
 # 请求图片
+# 本地不保存，二进制转为base64后直接写入mongodb
 cleanData = selectToDic('_id', 'todayUrls', fields={'url': 1, 'telImg': 1, 'phoneImg': 1, 'wxImg': 1},
                         where={'spiderDate': spiderDate})
 for i in cleanData:
@@ -62,8 +62,11 @@ for i in cleanData:
     kl = ['telImg', 'phoneImg', 'wxImg']
     for k in kl:
         kk = '{}base64'.format(k)
-        if k in item and kk not in item:
+        # if k in item and kk not in item:
+        if k in item and 1:  # 重新生成
             imgUrl = item[k]
+            if imgUrl == '':
+                continue
             webImgToBase64Str(imgUrl)
             Base64Str = webImgToBase64Str(imgUrl)
             if Base64Str != '':
@@ -82,7 +85,6 @@ cleanData = selectToDic('_id', 'todayUrls', fields={'url': 1, 'comInfo': 1, 'com
 for i in cleanData:
     _id = i
     # updateOne(_id, {'cleanData': {}}, 'todayUrls')
-
     item = cleanData[i]
     url = item['url']
     # 字段是否在mongodb-doc中存在
@@ -159,24 +161,67 @@ for i in cleanData:
 
             d = {}
             d['comName'] = comName
-
-            for cc in c:
+            for _ in c:
                 # comName,contactName,addr,telPhone,mobilePhone,qq,website
-                d = {}
-                if '传 真' in cc:
+                cc = _.replace(' ', '').replace('    ', '')
+                print(_)
+                print(cc)
+                if '传真：' in cc or 'FAX' in cc:
                     d['fax'] = cc.split('：')[-1]
-                elif '手 机' in cc:
+                elif '手机：' in cc or 'MOB' in cc:
                     d['mobilePhone'] = cc.split('：')[-1]
-                elif '电 话' in cc:
+                elif '电话：' in cc or '热线：' in cc or 'TEL' in cc:
                     d['telPhone'] = cc.split('：')[-1]
-                elif '地 址' in cc:
+                elif '地址：' in cc:
                     d['addr'] = cc.split('：')[-1]
-                elif '公司地址' in cc:
-                    d['addr'] = cc.split('：')[-1]
-                elif '官 网' in cc:
+                elif '网站：' in cc or '官网：' in cc or '网址：' in cc or 'URL' in cc:
                     d['webSite'] = cc.split('：')[-1]
-                elif '联系人' in cc:
+                elif '联系：' in cc or '联系人：' in cc:
                     d['contactName'] = cc.split('：')[-1]
+            for k in d:
+                v = d[k]
+                updateOneIdKV(_id, k, v)
+    elif 'http://www.heze.cn/info/' in url:
+        if 'comInfoTxt' in item:
+            if 'comName' in item:
+                comName = item['comName']
+                c = item['comInfoTxt'].split(comName)[-1].split('\n')
+            else:
+                c = item['comInfoTxt'].split('\n')
+            d = {}
+            d['comName'] = comName
+
+            for _ in c:
+                # comName,contactName,addr,telPhone,mobilePhone,qq,website
+                cc = _.replace(' ', '').replace('    ', '')
+                print(_)
+                print(cc)
+                if '公司所在地：' in cc:
+                    d['addr'] = cc.split('：')[-1]
+                elif '网站：' in cc or '官网：' in cc or '网址：' in cc or 'URL' in cc:
+                    d['webSite'] = cc.split('：')[-1]
+                elif '联系：' in cc or '联系人：' in cc:
+                    d['contactName'] = cc.split('：')[-1]
+            for k in d:
+                v = d[k]
+                updateOneIdKV(_id, k, v)
+    elif 'http://www.heze.cn/qiye/' in url:
+        if 'comInfoTxt' in item:
+            c = item['comInfoTxt'].split('\n')
+            d = {}
+            updateOneIdKV(_id, 'addr', '')
+            updateOneIdKV(_id, 'webSite', '')
+            for _ in c:
+                # comName,contactName,addr,telPhone,mobilePhone,qq,website
+                cc = _.replace(' ', '').replace('    ', '')
+                print(_)
+                print(cc)
+                if '地址:' in cc:
+                    d['addr'] = cc.split(':')[-1]
+                elif '企业官网' in cc:
+                    d['webSite'] = cc.split(':')[-1]
+                elif '联系人' in cc:
+                    d['contactName'] = cc.split(':')[-1]
             for k in d:
                 v = d[k]
                 updateOneIdKV(_id, k, v)
