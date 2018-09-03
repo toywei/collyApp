@@ -52,14 +52,20 @@ def webImgToBase64Str(imgUrl):
 
 
 spiderDate = time.strftime("%Y%m%d", time.localtime())
+mongoWhere = {'spiderDate': spiderDate} if 1 > 2 else {}
+
 # 请求图片
 # 本地不保存，二进制转为base64后直接写入mongodb
 cleanData = selectToDic('_id', 'todayUrls', fields={'url': 1, 'telImg': 1, 'phoneImg': 1, 'wxImg': 1},
-                        where={'spiderDate': spiderDate})
+                        where=mongoWhere)
 for i in cleanData:
+    break
     _id = i
     item = cleanData[i]
     kl = ['telImg', 'phoneImg', 'wxImg']
+    url = item['url']
+    if 'cnhan.com/shantui' in url:
+        continue
     for k in kl:
         kk = '{}base64'.format(k)
         # if k in item and kk not in item:
@@ -80,7 +86,7 @@ for i in cleanData:
 # http://www.cnhan.com/pinfo/company-72947-contact.html 直接取comInfoTxt
 
 cleanData = selectToDic('_id', 'todayUrls', fields={'url': 1, 'comInfo': 1, 'comInfoTxt': 1, 'comName': 1},
-                        where={'spiderDate': spiderDate})
+                        where=mongoWhere)
 
 for i in cleanData:
     _id = i

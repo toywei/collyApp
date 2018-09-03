@@ -63,7 +63,6 @@ const findDocuments = function (db, collectionName, filter, callback) {
 }
 
 const updateDocument = function (db, collectionName, filter, val, callback) {
-
     // Get the documents collection
     const collection = db.collection(collectionName)
     collection.updateOne(filter, val, function (err, result) {
