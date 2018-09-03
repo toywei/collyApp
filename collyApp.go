@@ -64,9 +64,10 @@ func eggSitePathTargetDate(TargetDate string) map[string]string {
 }
 
 //  指定日期数据采集
-var TargetDate = "2018-09-01"
+var TargetDate = "2018-09-03"
 var TodayDate = time.Now().Format("2006-01-02")
 var mongoCollectioName = "todayUrls"
+var TargetDateMongoFmt = strings.Replace(TargetDate, "-", "", -1)
 var SitePathTargetDate = eggSitePathTargetDate(TargetDate)
 
 func getTargetDateSpideredUrl() []string {
@@ -293,7 +294,7 @@ func getTargetDateUrls() []string {
 			//请求页面的正则表达式，满足其一即可
 			regexp.MustCompile("^http://cn.sonhoo.com/wukong/$"),
 			//regexp.MustCompile("^http://cn.sonhoo.com/wukong/[ac]{1}\\d+$"),
-			regexp.MustCompile("^http://cn.sonhoo.com/wukong/[a]{1}\\d+$"),
+			regexp.MustCompile("^http://cn.sonhoo.com/wukong/[ac]{1}\\d+$"),
 		),
 		// 不加UA，无数据
 		colly.UserAgent("Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36"),
@@ -365,7 +366,7 @@ func getTargetDateUrls() []string {
 					result, err := coll.InsertOne(
 						context.Background(),
 						bson.NewDocument(
-							bson.EC.String("spiderDate", TargetDate),
+							bson.EC.String("spiderDate", TargetDateMongoFmt),
 							bson.EC.String("url", reqUrl),
 							bson.EC.String("html", wholePageHtml),
 							bson.EC.String("comName", comName),
@@ -407,7 +408,7 @@ func main() {
 			result, err := coll.InsertOne(
 				context.Background(),
 				bson.NewDocument(
-					bson.EC.String("spiderDate", TargetDate),
+					bson.EC.String("spiderDate", TargetDateMongoFmt),
 					bson.EC.String("url", reqUrl),
 					bson.EC.String("html", wholePageHtml),
 				))
