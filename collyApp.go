@@ -22,13 +22,12 @@ task
 http://www.cnhan.com/hyzx/
 http://www.cnhan.com/shantui/
 http://www.cnhan.com/pinfo/
-
 http://www.heze.cn/info
 http://www.heze.cn/qiye/
-
 http://cn.sonhoo.com/wukong/
 采集站点当日更新数据的客户联系方式
 
+20180828
 站点日期字符串特征
 "cnhan.com/hyzx/":    "20180902",
 "cnhan.com/shantui/": "20180902",
@@ -36,7 +35,6 @@ http://cn.sonhoo.com/wukong/
 "heze.cn/info/":      "2018.09.02",
 "heze.cn/qiye/":      "2018.09.02",
 "sonhoo.com/wukong/": "2018-09-02",
-
 */
 
 type PotentialCustomerWebSiteUrl struct {
@@ -54,20 +52,20 @@ func eggSitePathTargetDate(TargetDate string) map[string]string {
 	}
 	for k, v := range SitePathTargetDateFmt {
 		fmt.Println(k)
-		if ( v == "-") {
+		if ( v == "") {
 			SitePathTargetDateFmt[k] = TargetDate
 		} else {
-			SitePathTargetDateFmt[k] = strings.Replace(TargetDate, "-", v, -1)
+			SitePathTargetDateFmt[k] =TargetDate[0:4]+v+TargetDate[4:6]+v+TargetDate[6:8]
 		}
 	}
+	fmt.Println(SitePathTargetDateFmt)
 	return SitePathTargetDateFmt
 }
 
 //  指定日期数据采集
-var TargetDate = "2018-09-03"
-var TodayDate = time.Now().Format("2006-01-02")
-var mongoCollectioName = "todayUrls"
-var TargetDateMongoFmt = strings.Replace(TargetDate, "-", "", -1)
+var TargetDate = "20180903"
+var TodayDate = time.Now().Format("20060102")
+var mongoCollectioName = "todayUrls0904TestData"
 var SitePathTargetDate = eggSitePathTargetDate(TargetDate)
 
 func getTargetDateSpideredUrl() []string {
@@ -91,7 +89,6 @@ func getTargetDateSpideredUrl() []string {
 		fmt.Println(v.Url)
 		PotentialCustomerWebSiteUrlSet = append(PotentialCustomerWebSiteUrlSet, v.Url)
 	}
-
 	return PotentialCustomerWebSiteUrlSet
 }
 
@@ -109,9 +106,7 @@ func eleInArr(ele string, arr [] string) bool {
 func getTargetDateUrls() []string {
 	var targetDateUrls []string
 	PotentialCustomerWebSiteUrlSet := getTargetDateSpideredUrl()
-
 	c := colly.NewCollector()
-
 	if (TargetDate == TodayDate) {
 		// 路径下只有当日url
 		// Instantiate default collector
@@ -130,7 +125,6 @@ func getTargetDateUrls() []string {
 				fmt.Printf("Link found: %q -> %s\n", e.Text, link)
 			}
 		})
-
 		// Start scraping on http://www.cnhan.com/shantui/
 		c.Visit("http://www.cnhan.com/shantui/")
 
@@ -165,12 +159,10 @@ func getTargetDateUrls() []string {
 				}
 			}
 		})
-
 		// Before making a request print "Visiting ..."
 		c.OnRequest(func(r *colly.Request) {
 			fmt.Println("Visiting", r.URL.String())
 		})
-
 		// Start scraping on http://www.cnhan.com/shantui/
 		c.Visit("http://www.cnhan.com/hyzx/")
 
@@ -208,12 +200,10 @@ func getTargetDateUrls() []string {
 			}
 		}
 	})
-
 	// Before making a request print "Visiting ..."
 	c.OnRequest(func(r *colly.Request) {
 		fmt.Println("Visiting", r.URL.String())
 	})
-
 	// Start scraping on http://www.cnhan.com/shantui/
 	c.Visit("http://www.cnhan.com/pinfo/")
 
@@ -229,7 +219,6 @@ func getTargetDateUrls() []string {
 		fmt.Printf("Link found: %q -> %s\n", e.Text, link)
 		targetDateUrls = append(targetDateUrls, link)
 	})
-
 	// Start scraping on http://www.cnhan.com/shantui/
 	c.Visit("http://www.heze.cn/info/")
 
@@ -274,12 +263,10 @@ func getTargetDateUrls() []string {
 			}
 		}
 	})
-
 	// Before making a request print "Visiting ..."
 	c.OnRequest(func(r *colly.Request) {
 		fmt.Println("Visiting", r.URL.String())
 	})
-
 	// Start scraping on http://www.heze.cn/qiye/
 	c.Visit("http://www.heze.cn/qiye/")
 
@@ -298,8 +285,6 @@ func getTargetDateUrls() []string {
 		),
 		// 不加UA，无数据
 		colly.UserAgent("Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36"),
-
-
 	)
 	// Add callbacks to a Collector
 
@@ -311,7 +296,6 @@ func getTargetDateUrls() []string {
 		c.Visit(e.Request.AbsoluteURL(link))
 		// 无法通过href的DOM相关节点判断时间
 	})
-
 	c.OnHTML(".app-col", func(e *colly.HTMLElement) {
 		fmt.Println("First column of a table row:", e.Text)
 		dat1 := e.ChildText(".app-news-detail")
@@ -320,17 +304,14 @@ func getTargetDateUrls() []string {
 		fmt.Println("c.OnHTML--->html")
 		fmt.Println(dat)
 	})
-
 	// On every a element which has href attribute call callback
 	c.OnScraped(func(r *colly.Response) {
 		fmt.Println("Finished", r.Request.URL)
 	})
-
 	// Before making a request print "Visiting ..."
 	c.OnRequest(func(r *colly.Request) {
 		fmt.Println("Visiting", r.URL.String())
 	})
-
 	c.OnError(func(_ *colly.Response, err error) {
 		log.Println("Something went wrong:", err)
 	})
@@ -366,7 +347,7 @@ func getTargetDateUrls() []string {
 					result, err := coll.InsertOne(
 						context.Background(),
 						bson.NewDocument(
-							bson.EC.String("spiderDate", TargetDateMongoFmt),
+							bson.EC.String("spiderDate", TargetDate),
 							bson.EC.String("url", reqUrl),
 							bson.EC.String("html", wholePageHtml),
 							bson.EC.String("comName", comName),
@@ -408,7 +389,7 @@ func main() {
 			result, err := coll.InsertOne(
 				context.Background(),
 				bson.NewDocument(
-					bson.EC.String("spiderDate", TargetDateMongoFmt),
+					bson.EC.String("spiderDate", TargetDate),
 					bson.EC.String("url", reqUrl),
 					bson.EC.String("html", wholePageHtml),
 				))
