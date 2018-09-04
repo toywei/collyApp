@@ -15,6 +15,7 @@ import (
 	"gopkg.in/mgo.v2"
 	mgoBson "gopkg.in/mgo.v2/bson"
 	"time"
+	"math/rand"
 )
 
 /*
@@ -35,14 +36,31 @@ http://cn.sonhoo.com/wukong/
 "heze.cn/info/":      "2018.09.02",
 "heze.cn/qiye/":      "2018.09.02",
 "sonhoo.com/wukong/": "2018-09-02",
+
+20180904
+http://cn.sonhoo.com/wukong/c16?offset=600&limit=50 先去文章含有文章日期的列表页遍历出符合条件的文章url，
+再去文章详情页http://cn.sonhoo.com/wukong/a213383采集客户资料
+
 */
 
 type PotentialCustomerWebSiteUrl struct {
 	Url string `bson:"url"`
 }
 
-func eggSitePathTargetDate(TargetDate string) map[string]string {
-	SitePathTargetDateFmt := map[string]string{
+// Configuration | Colly http://go-colly.org/docs/introduction/configuration/
+const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+func RandomString() string {
+	b := make([]byte, rand.Intn(10)+10)
+	for i := range b {
+		b[i] = letterBytes[rand.Intn(len(letterBytes))]
+	}
+	return string(b)
+}
+
+// url汇总页的日期筛选方法
+func eggSitePathListTargetDate(TargetDate string) map[string]string {
+	SitePathListTargetDateFmt := map[string]string{
 		"cnhan.com/hyzx/":    "",
 		"cnhan.com/shantui/": "ONLYtoday",
 		"cnhan.com/pinfo/":   ".",
@@ -50,23 +68,23 @@ func eggSitePathTargetDate(TargetDate string) map[string]string {
 		"heze.cn/qiye/":      ".",
 		"sonhoo.com/wukong/": "-",
 	}
-	for k, v := range SitePathTargetDateFmt {
+	for k, v := range SitePathListTargetDateFmt {
 		fmt.Println(k)
 		if ( v == "") {
-			SitePathTargetDateFmt[k] = TargetDate
+			SitePathListTargetDateFmt[k] = TargetDate
 		} else {
-			SitePathTargetDateFmt[k] =TargetDate[0:4]+v+TargetDate[4:6]+v+TargetDate[6:8]
+			SitePathListTargetDateFmt[k] = TargetDate[0:4] + v + TargetDate[4:6] + v + TargetDate[6:8]
 		}
 	}
-	fmt.Println(SitePathTargetDateFmt)
-	return SitePathTargetDateFmt
+	fmt.Println(SitePathListTargetDateFmt)
+	return SitePathListTargetDateFmt
 }
 
 //  指定日期数据采集
-var TargetDate = "20180903"
+var TargetDate = "20180904"
 var TodayDate = time.Now().Format("20060102")
 var mongoCollectioName = "todayUrls0904TestData"
-var SitePathTargetDate = eggSitePathTargetDate(TargetDate)
+var SitePathListTargetDate = eggSitePathListTargetDate(TargetDate)
 
 func getTargetDateSpideredUrl() []string {
 	//查询mongodb数据
@@ -141,12 +159,13 @@ func getTargetDateUrls() []string {
 				regexp.MustCompile("^http://www.cnhan.com/hyzx/(.{0}$)|(index-all-[1-9][0-9]{0,1}[^0-9]{0,1}\\.html$)"),
 			),
 		)
+
 		// On every a element which has href attribute call callback
 		c.OnHTML("a[href]", func(e *colly.HTMLElement) {
 			link := e.Attr("href")
 			fmt.Printf("Link found: %q -> %s\n", e.Text, link)
 			c.Visit(e.Request.AbsoluteURL(link))
-			d := SitePathTargetDate["cnhan.com/hyzx/"]
+			d := SitePathListTargetDate["cnhan.com/hyzx/"]
 			reg := regexp.MustCompile(d) // http://www.cnhan.com/hyzx/20180827/7109076.html 通过url格式过滤出目标日的url
 			data := reg.Find([]byte(link))
 			regRes := len(data)
@@ -188,7 +207,7 @@ func getTargetDateUrls() []string {
 		//文本过滤
 		eDate := e.ChildText(".span2")
 		//http://www.cnhan.com/pinfo/313257.html   周口水泥彩砖具有的特色是什么2018.08.27
-		d := SitePathTargetDate["cnhan.com/pinfo/"]
+		d := SitePathListTargetDate["cnhan.com/pinfo/"]
 		if (strings.Contains(eDate, d)) {
 			link := e.Attr("href")
 			link = "http://www.cnhan.com" + link
@@ -276,92 +295,78 @@ func getTargetDateUrls() []string {
 	// 类目页 http://cn.sonhoo.com/wukong/c133
 	// 文章页 http://cn.sonhoo.com/wukong/a191114
 	c = colly.NewCollector(
-		colly.AllowedDomains("Tcn.sonhoo.com"),
+		colly.AllowedDomains("cn.sonhoo.com"),
 		colly.URLFilters(
 			//请求页面的正则表达式，满足其一即可
 			regexp.MustCompile("^http://cn.sonhoo.com/wukong/$"),
 			//regexp.MustCompile("^http://cn.sonhoo.com/wukong/[ac]{1}\\d+$"),
-			regexp.MustCompile("^http://cn.sonhoo.com/wukong/[ac]{1}\\d+$"),
+			regexp.MustCompile("^http://cn.sonhoo.com/wukong/[c]{1}\\d+$"),
+			// http://cn.sonhoo.com/wukong/c0?offset=150&limit=50 文章列表页
+			regexp.MustCompile("^http://cn.sonhoo.com/wukong/c\\d+\\?offset=\\d+\\&limit=\\d+$"),
 		),
 		// 不加UA，无数据
-		colly.UserAgent("Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36"),
+		// colly.UserAgent("Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36"),
 	)
-	// Add callbacks to a Collector
+	// 限制线程数，引入随机延迟
+	// Limit the number of threads started by colly to two
+	// when visiting links which domains' matches "*httpbin.*" glob
+	c.Limit(&colly.LimitRule{
+		DomainGlob:  "*sonhoo.*",
+		Parallelism: 5,
+		RandomDelay: 5 * time.Second,
+	})
 
+	// 保证遍历http://cn.sonhoo.com/wukong/c4?offset=100&limit=50各个页面的，获取可能的目标日的url
 	// On every a element which has href attribute call callback
 	c.OnHTML("a[href]", func(e *colly.HTMLElement) {
-		// 对方网站内容不明，试探性强制退出遍历
 		link := e.Attr("href")
-		//fmt.Printf("Link found: %q -> %s\n", e.Text, link)
+		fmt.Printf("Link found: %q -> %s\n", e.Text, link)
 		c.Visit(e.Request.AbsoluteURL(link))
-		// 无法通过href的DOM相关节点判断时间
 	})
-	c.OnHTML(".app-col", func(e *colly.HTMLElement) {
-		fmt.Println("First column of a table row:", e.Text)
-		dat1 := e.ChildText(".app-news-detail")
+
+	// 目标日的url入库
+	// div[class=page-articles__articles]>ul>li
+	c.OnHTML("div[class=page-articles__articles]>ul>li", func(e *colly.HTMLElement) {
+		link := e.ChildAttr("a", "href")
+		dat1 := e.ChildText("span")
 		fmt.Println(dat1)
-		dat := e.ChildText(".app-news-detail>.app-news-detail__meta>.app-news-detail__meta-item")
-		fmt.Println("c.OnHTML--->html")
-		fmt.Println(dat)
+		fmt.Println(link)
+		pageDate := e.ChildText("span")
+		d := SitePathListTargetDate["sonhoo.com/wukong/"]
+		fmt.Println("tDate", d)
+		fmt.Println("pageDate", pageDate)
+		if (strings.Contains(pageDate, d)) {
+			link = "http://cn.sonhoo.com" + link
+			t := eleInArr(link, PotentialCustomerWebSiteUrlSet)
+			if (!t) {
+				targetDateUrls = append(targetDateUrls, link)
+				fmt.Printf("Link found: %q -> %s\n", e.Text, link)
+			}
+		}
+		c.Visit(e.Request.AbsoluteURL(link))
 	})
-	// On every a element which has href attribute call callback
+
 	c.OnScraped(func(r *colly.Response) {
 		fmt.Println("Finished", r.Request.URL)
 	})
 	// Before making a request print "Visiting ..."
 	c.OnRequest(func(r *colly.Request) {
 		fmt.Println("Visiting", r.URL.String())
+		r.Headers.Set("User-Agent", RandomString())
 	})
 	c.OnError(func(_ *colly.Response, err error) {
 		log.Println("Something went wrong:", err)
 	})
-
 	c.OnResponse(func(r *colly.Response) {
 		fmt.Println("Visited", r.Request.URL)
-		reqUrl := fmt.Sprint(r.Request.URL)
-		if strings.Contains(reqUrl, "http://cn.sonhoo.com/wukong/a") {
-			wholePageHtml := string(r.Body)
-			fmt.Println(wholePageHtml)
-			s := strings.Replace(wholePageHtml, " ", "", -1)
-			pageDate := strings.Split(s, "app-news-detail__meta-item\">")[1]
-			pageDate = strings.Split(pageDate, "li")[0]
-			d := SitePathTargetDate["sonhoo.com/wukong/"]
-			if (strings.Contains(pageDate, d) ) {
-				comName := strings.Split(s, "app-owner-card__title\">")[1]
-				comName = strings.Split(comName, "</h3>")[0]
-				telPhone := strings.Split(s, "app-owner-card__btn-phone\">")[1]
-				telPhone = strings.Split(telPhone, "</a>")[0]
-				comService := strings.Split(s, "app-owner-card__service\">")[1]
-				comService = strings.Split(comService, "</p>")[0]
-				// 建立func时，如何确定参数的类型？
-				t := eleInArr(reqUrl, PotentialCustomerWebSiteUrlSet)
-				if (!t) {
-					strings.Replace(reqUrl, "\n", "", -1)
-					client, err := mongo.Connect(context.Background(), "mongodb://hbaseU:123@192.168.3.103:27017/hbase", nil)
-					db := client.Database("hbase")
-					coll := db.Collection("targetDateUrls")
-					if err != nil {
-						fmt.Println(err)
-					}
-					// 判断日期的同样方法，获取其他字段
-					result, err := coll.InsertOne(
-						context.Background(),
-						bson.NewDocument(
-							bson.EC.String("spiderDate", TargetDate),
-							bson.EC.String("url", reqUrl),
-							bson.EC.String("html", wholePageHtml),
-							bson.EC.String("comName", comName),
-							bson.EC.String("telPhone", telPhone),
-							bson.EC.String("comService", comService),
-						))
-					fmt.Println(err)
-					fmt.Println(result)
-				}
-			}
-		}
 	})
-	// Start scraping on http://cn.sonhoo.com/wukong/
-	c.Visit("http://cn.sonhoo.com/wukong/")
+	// Start scraping on
+	// http://cn.sonhoo.com/wukong/ 不带日期文章列表页
+	// http://cn.sonhoo.com/wukong/c0 20180904 带日期的文章列表页：共50页，没有l类目
+	c.Visit("http://cn.sonhoo.com/wukong/c0")
+	// 等待线程结束
+	// Wait until threads are finished
+	c.Wait()
 
 	return targetDateUrls
 }
@@ -396,7 +401,6 @@ func main() {
 			fmt.Println(err)
 			fmt.Println(result)
 		})
-		// Start scraping on http://www.cnhan.com/shantui/
 		c.Visit(targetDateUrl)
 	}
 }
