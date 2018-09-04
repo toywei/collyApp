@@ -83,7 +83,7 @@ func eggSitePathListTargetDate(TargetDate string) map[string]string {
 //  指定日期数据采集
 var TargetDate = "20180904"
 var TodayDate = time.Now().Format("20060102")
-var mongoCollectioName = "todayUrls0904TestData"
+var mongoCollectioName = "todayUrls"
 var SitePathListTargetDate = eggSitePathListTargetDate(TargetDate)
 
 func getTargetDateSpideredUrl() []string {
@@ -121,6 +121,9 @@ func eleInArr(ele string, arr [] string) bool {
 	return false
 }
 
+var thisVisitedUrls [] string
+var thisVisitedUrlsLimit = 200
+
 func getTargetDateUrls() []string {
 	var targetDateUrls []string
 	PotentialCustomerWebSiteUrlSet := getTargetDateSpideredUrl()
@@ -129,13 +132,12 @@ func getTargetDateUrls() []string {
 		// 路径下只有当日url
 		// Instantiate default collector
 		c = colly.NewCollector(
-			colly.AllowedDomains("www.cnhan.com"),
+			colly.AllowedDomains("Twww.cnhan.com"),
 		)
 		// On every a element which has href attribute call callback
 		// 类选择器
 		//url仅在本页
 		c.OnHTML(".showSort a[href]", func(e *colly.HTMLElement) {
-
 			link := e.Attr("href")
 			t := eleInArr(link, PotentialCustomerWebSiteUrlSet)
 			if (!t) {
@@ -149,7 +151,7 @@ func getTargetDateUrls() []string {
 		// 起始路由改变
 		// Instantiate default collector
 		c = colly.NewCollector(
-			colly.AllowedDomains("www.cnhan.com"),
+			colly.AllowedDomains("Twww.cnhan.com"),
 			colly.URLFilters(
 				//请求页面的正则表达式，满足其一即可
 				//http://www.cnhan.com/hyzx/
@@ -159,7 +161,6 @@ func getTargetDateUrls() []string {
 				regexp.MustCompile("^http://www.cnhan.com/hyzx/(.{0}$)|(index-all-[1-9][0-9]{0,1}[^0-9]{0,1}\\.html$)"),
 			),
 		)
-
 		// On every a element which has href attribute call callback
 		c.OnHTML("a[href]", func(e *colly.HTMLElement) {
 			link := e.Attr("href")
@@ -182,15 +183,19 @@ func getTargetDateUrls() []string {
 		c.OnRequest(func(r *colly.Request) {
 			fmt.Println("Visiting", r.URL.String())
 		})
+		c.OnResponse(func(r *colly.Response) {
+			fmt.Println("Visited", r.Request.URL)
+			url := fmt.Sprintln(r.Request.URL)
+			thisVisitedUrls = append(thisVisitedUrls, url)
+		})
 		// Start scraping on http://www.cnhan.com/shantui/
 		c.Visit("http://www.cnhan.com/hyzx/")
-
 	}
 
 	// 起始路由改变
 	// Instantiate default collector
 	c = colly.NewCollector(
-		colly.AllowedDomains("www.cnhan.com"),
+		colly.AllowedDomains("Twww.cnhan.com"),
 		colly.URLFilters(
 			//请求页面的正则表达式，满足其一即可
 			//http://www.cnhan.com/pinfo/
@@ -202,8 +207,11 @@ func getTargetDateUrls() []string {
 	// On every a element which has href attribute call callback
 	c.OnHTML("a[href]", func(e *colly.HTMLElement) {
 		link := e.Attr("href")
-		fmt.Printf("Link found: %q -> %s\n", e.Text, link)
-		c.Visit(e.Request.AbsoluteURL(link))
+		t := eleInArr(link, thisVisitedUrls)
+		if (!t) {
+			fmt.Println("本次没被访问的url，发起访问，但可能被过滤", link)
+			c.Visit(e.Request.AbsoluteURL(link))
+		}
 		//文本过滤
 		eDate := e.ChildText(".span2")
 		//http://www.cnhan.com/pinfo/313257.html   周口水泥彩砖具有的特色是什么2018.08.27
@@ -223,13 +231,18 @@ func getTargetDateUrls() []string {
 	c.OnRequest(func(r *colly.Request) {
 		fmt.Println("Visiting", r.URL.String())
 	})
+	c.OnResponse(func(r *colly.Response) {
+		fmt.Println("Visited", r.Request.URL)
+		url := fmt.Sprintln(r.Request.URL)
+		thisVisitedUrls = append(thisVisitedUrls, url)
+	})
 	// Start scraping on http://www.cnhan.com/shantui/
 	c.Visit("http://www.cnhan.com/pinfo/")
 
 	// 起始路由改变
 	// Instantiate default collector
 	c = colly.NewCollector(
-		colly.AllowedDomains("www.heze.cn"),
+		colly.AllowedDomains("Twww.heze.cn"),
 	)
 	// On every a element which has href attribute call callback
 	// 类选择器
@@ -237,6 +250,11 @@ func getTargetDateUrls() []string {
 		link := e.Attr("href")
 		fmt.Printf("Link found: %q -> %s\n", e.Text, link)
 		targetDateUrls = append(targetDateUrls, link)
+	})
+	c.OnResponse(func(r *colly.Response) {
+		fmt.Println("Visited", r.Request.URL)
+		url := fmt.Sprintln(r.Request.URL)
+		thisVisitedUrls = append(thisVisitedUrls, url)
 	})
 	// Start scraping on http://www.cnhan.com/shantui/
 	c.Visit("http://www.heze.cn/info/")
@@ -258,7 +276,7 @@ func getTargetDateUrls() []string {
 	//http://www.heze.cn/qiye/list-8.html
 	// Instantiate default collector
 	c = colly.NewCollector(
-		colly.AllowedDomains("www.heze.cn"),
+		colly.AllowedDomains("Twww.heze.cn"),
 		colly.URLFilters(
 			//请求页面的正则表达式，满足其一即可
 			regexp.MustCompile("^http://www.heze.cn/qiye/(.{0}$)|(list-\\d+-\\d+\\.html$)"),
@@ -267,8 +285,11 @@ func getTargetDateUrls() []string {
 	// On every a element which has href attribute call callback
 	c.OnHTML("a[href]", func(e *colly.HTMLElement) {
 		link := e.Attr("href")
-		fmt.Printf("Link found: %q -> %s\n", e.Text, link)
-		c.Visit(e.Request.AbsoluteURL(link))
+		t := eleInArr(link, thisVisitedUrls)
+		if (!t) {
+			fmt.Println("本次没被访问的url，发起访问，但可能被过滤", link)
+			c.Visit(e.Request.AbsoluteURL(link))
+		}
 		// http://www.heze.cn/qiye/hongfei688/show-44-14825619.html
 		reg := regexp.MustCompile("^http://www.heze.cn/qiye/[0-9a-zA-Z]+/show-\\d+-\\d+\\.html$")
 		data := reg.Find([]byte(link))
@@ -285,6 +306,11 @@ func getTargetDateUrls() []string {
 	// Before making a request print "Visiting ..."
 	c.OnRequest(func(r *colly.Request) {
 		fmt.Println("Visiting", r.URL.String())
+	})
+	c.OnResponse(func(r *colly.Response) {
+		fmt.Println("Visited", r.Request.URL)
+		url := fmt.Sprintln(r.Request.URL)
+		thisVisitedUrls = append(thisVisitedUrls, url)
 	})
 	// Start scraping on http://www.heze.cn/qiye/
 	c.Visit("http://www.heze.cn/qiye/")
@@ -321,7 +347,15 @@ func getTargetDateUrls() []string {
 	c.OnHTML("a[href]", func(e *colly.HTMLElement) {
 		link := e.Attr("href")
 		fmt.Printf("Link found: %q -> %s\n", e.Text, link)
-		c.Visit(e.Request.AbsoluteURL(link))
+		t := eleInArr(link, thisVisitedUrls)
+		if (!t) {
+			fmt.Println("本次没被访问的url，发起访问，但可能被过滤", link)
+			if (len(thisVisitedUrls) > thisVisitedUrlsLimit) {
+				fmt.Println("len(thisVisitedUrls) > 50")
+				return
+			}
+			c.Visit(e.Request.AbsoluteURL(link))
+		}
 	})
 
 	// 目标日的url入库
@@ -343,7 +377,6 @@ func getTargetDateUrls() []string {
 				fmt.Printf("Link found: %q -> %s\n", e.Text, link)
 			}
 		}
-		c.Visit(e.Request.AbsoluteURL(link))
 	})
 
 	c.OnScraped(func(r *colly.Response) {
@@ -359,6 +392,8 @@ func getTargetDateUrls() []string {
 	})
 	c.OnResponse(func(r *colly.Response) {
 		fmt.Println("Visited", r.Request.URL)
+		url := fmt.Sprintln(r.Request.URL)
+		thisVisitedUrls = append(thisVisitedUrls, url)
 	})
 	// Start scraping on
 	// http://cn.sonhoo.com/wukong/ 不带日期文章列表页

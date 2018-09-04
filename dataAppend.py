@@ -1,6 +1,10 @@
 from pymongo import MongoClient
+from bs4 import BeautifulSoup
 import requests
 import time
+import json
+from tool import RandomString
+import random
 
 '''
 http://www.cnhan.com/shantui//templates/MC530/TP001/js/template.js
@@ -86,17 +90,36 @@ def updateOne(filter_id, update, collection_name,
 
 spiderDate = time.strftime("%Y%m%d", time.localtime())
 collectionName = 'todayUrls'
-mongoWhere = {'spiderDate': spiderDate} if 1 > 2 else {}
-urlHtml = selectToDic('_id', collectionName, fields={'url': 1, 'html': 1}, where=mongoWhere)
+mongoWhere = {'spiderDate': spiderDate} if 11 > 2 else {}
+urlHtml = selectToDic('_id', collectionName, fields={'url': 1, 'html': 1, 'spiderDate': 1, 'Base64parse2times': 1},
+                      where=mongoWhere)
 
 for i in urlHtml:
     _id = i
-    url = urlHtml[i]['url'].replace('\n', '')
+    item = urlHtml[i]
+    url = item['url'].replace('\n', '')
     updateOne(_id, {'url': url}, collectionName)
-    html = urlHtml[i]['html']
+
+    html = item['html']
+    spiderDate = item['spiderDate']
+    if 'sonhoo.com/wukong/' in url:
+        soup = BeautifulSoup(html, 'html.parser')
+        try:
+            comName = soup.find("title").text.split('-')[-1].replace('【', '').replace('】', '')
+            s = soup.text.split('"app-contact-data":')[1].split('},"pages":')[0]
+            d = json.loads(s, encoding='utf-8')
+            dd = d['data']
+            updateOne(_id, {'comName': comName, 'mobilePhone': dd['telephone'], 'qq': dd['qq'], 'addr': dd['address'],
+                            'contactName': dd['linkman']}, collectionName)
+            print('ok-->', spiderDate, url)
+        except Exception as e:
+            print(e)
+            print(url)
 
     if 'cnhan.com/shantui' in url:
-
+        # 仅仅请求一次，且假设返回正确、正确入库
+        if 'Base64parse2times' in item:
+            continue
         # window.compId = "3644";
         # window.platformPath = "http://www.cnhan.com/shantui/";
         # window.cId = "3691";
@@ -120,7 +143,6 @@ for i in urlHtml:
         except Exception as e:
             print(e)
 
-    continue
     # 客户资料在mogo的html中，但是没有联系方式详情页完整
     plainTag = 'http://www.cnhan.com/hyzx/'
     if plainTag in url:
@@ -134,19 +156,22 @@ for i in urlHtml:
                     contactUrl = '{}{}'.format(plainTag, href.replace('../', ''))
                     updateOne(_id, {'contactUrl': contactUrl}, collectionName)
                     try:
-                        r = requests.get(contactUrl)
+                        headers = {'User-Agent': RandomString()}
+                        r = requests.get(contactUrl, headers=headers)
+                        time.sleep(random.random())
                         # 已经在页面校验,
                         # 1-出现则唯一;2-出现且出现其中的一个；
                         class_l = ['lxfs', 'cp_rcc', 'about', 'lx_c', 'describe', 'nsmsg', 'lxwmjs', 'newscon',
-                                   'dis_content2', 'lxwm', 'case_right_box', 'mrb2_list', 'cen_lt']
+                                   'dis_content2', 'lxwm', 'case_right_box', 'mrb2_list', 'cen_lt', 'contact_top',
+                                   'content']
                         for c_ in class_l:
                             findChk = BeautifulSoup(r.text, 'html.parser').find(class_=c_)
                             if findChk is not None:
                                 comInfoTxt = findChk.text.replace('\n\n', '\n').replace('\t\t', '\t')
                                 dropTag_tail_l = ['纬度']
+                                comName = BeautifulSoup(r.text, 'html.parser').find('title').split('-')[0]
                                 for sp in dropTag_tail_l:
                                     comInfoTxt = comInfoTxt.split(sp)[0]
-                                    comName = r.text.split('title>')[1].split('-')[0]
                                     print(comInfoTxt)
                                 updateOne(_id, {'comName': comName, 'comInfoTxt': comInfoTxt}, collectionName)
                     except Exception as e:

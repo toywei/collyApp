@@ -52,14 +52,13 @@ def webImgToBase64Str(imgUrl):
 
 
 spiderDate = time.strftime("%Y%m%d", time.localtime())
-mongoWhere = {'spiderDate': spiderDate} if 1 > 2 else {}
+mongoWhere = {'spiderDate': spiderDate} if 11 > 2 else {}
 
 # 请求图片
 # 本地不保存，二进制转为base64后直接写入mongodb
 cleanData = selectToDic('_id', 'todayUrls', fields={'url': 1, 'telImg': 1, 'phoneImg': 1, 'wxImg': 1},
                         where=mongoWhere)
 for i in cleanData:
-    break
     _id = i
     item = cleanData[i]
     kl = ['telImg', 'phoneImg', 'wxImg']
@@ -181,7 +180,7 @@ for i in cleanData:
                 elif '地址：' in cc:
                     d['addr'] = cc.split('：')[-1]
                 elif '网站：' in cc or '官网：' in cc or '网址：' in cc or 'URL' in cc:
-                    d['webSite'] = cc.split('：')[-1]
+                    d['webSite'] = cc.split('：')[-1].replace('URL:', '')
                 elif '联系：' in cc or '联系人：' in cc:
                     d['contactName'] = cc.split('：')[-1]
             for k in d:
