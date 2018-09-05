@@ -23,8 +23,7 @@ type SiteUrl struct {
 }
 
 //  指定日期数据采集
-var todayDate = time.Now().Format("20060102")
-var targetDate = todayDate
+var targetDate = time.Now().Format("20060102")
 var mongoCollectioName = "siteUserPage"
 var thisVisitedUrls [] string
 var thisVisitedUrlsLimit = 30000
@@ -49,6 +48,26 @@ func eleInArr(ele string, arr [] string) bool {
 		}
 	}
 	return false
+}
+
+// 检查href的是否为url
+func isUrl(str string) bool {
+	f := [] string{"javascript:", "tel:"}
+	if (strings.Replace(str, " ", "", -1) == "") {
+		return false
+	}
+	for _, v := range f {
+		if ( strings.Contains(str, v)) {
+			return false
+		}
+	}
+	// 可概括上述规则
+	reg := regexp.MustCompile("^.+[0-9a-zA-z]{1,}$")
+	data := reg.Find([]byte(str))
+	if (data == nil) {
+		return false
+	}
+	return true
 }
 
 /*
@@ -76,7 +95,6 @@ http://cn.sonhoo.com/wukong/c16?offset=600&limit=50 先去文章含有文章日�
 
 采集用户页
 认为用户页和文章详情页平级，但是客户页的对象是全站和无页面日期特征字符串要求
-
 */
 
 func refreshtargetDateInDbUrls() {
@@ -139,7 +157,7 @@ func batchWriteDb() {
 		}
 	}
 }
-func gettargetDateNewUrlsBatchSave() {
+func getTargetDateNewUrlsBatchSave() {
 	refreshtargetDateInDbUrls()
 	p := &targetDateNewUrls
 	pVisited := &thisVisitedUrls
@@ -153,6 +171,8 @@ func gettargetDateNewUrlsBatchSave() {
 			regexp.MustCompile("^http://cn.sonhoo.com/wukong/$"),
 			regexp.MustCompile("^http://cn.sonhoo.com/wukong/[ac]{1}\\d+$"),
 			regexp.MustCompile("^http://cn.sonhoo.com/wukong/c\\d+\\?offset=\\d+\\&limit=\\d+$"),
+			// 数据量个位数，放宽过滤器
+			regexp.MustCompile("^http://cn.sonhoo.com/wukong/.+$"),
 		),
 		// 不加UA，无数据
 		// colly.UserAgent("Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36"),
@@ -171,15 +191,19 @@ func gettargetDateNewUrlsBatchSave() {
 		fmt.Println(*p, "NEW------------------")
 		link := e.Attr("href")
 		fmt.Println(link)
+		if ( !strings.Contains(link, "http://") ) {
+			link = "http://cn.sonhoo.com" + link
+		}
 		// 不考虑同一路径的页面更新，不重复访问uri
 		t := eleInArr(link, *p)
 		t2 := eleInArr(link, *pVisited)
 		t3 := eleInArr(link, *pTargetDateInDb)
-		if (!t && !t2 && !t3) {
+		t4 := isUrl(link)
+		if (!t && !t2 && !t3 && !t4) {
 			fmt.Println("本次没被访问的url，发起访问，但可能被过滤", link)
 			c.Visit(e.Request.AbsoluteURL(link))
 		} else {
-			fmt.Println("跳过，本次程序已经访问，或者已经入库")
+			fmt.Println("跳过，原因：1.1、本次程序已经访问；1.2、已经入库；2.1、非url格式；")
 		}
 	})
 	c.OnScraped(func(r *colly.Response) {
@@ -233,7 +257,7 @@ func gettargetDateNewUrlsBatchSave() {
 func main() {
 	// 无限循环
 	for {
-		todayDate = time.Now().Format("20060102")
-		gettargetDateNewUrlsBatchSave()
+		targetDate = time.Now().Format("20060102")
+		getTargetDateNewUrlsBatchSave()
 	}
 }
