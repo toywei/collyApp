@@ -27,7 +27,7 @@ var targetDate = time.Now().Format("20060102")
 var mongoCollectioName = "siteUserPage"
 var thisVisitedUrls [] string
 var thisVisitedUrlsLimit = 30000
-var batchWriteDbLimit = 3
+var batchWriteDbLimit = 0
 var targetDateNewUrls []string
 var targetDateInDbUrls [] string
 
@@ -42,7 +42,7 @@ func RandomString() string {
 // 检查元素是否存在于数组？遍历？如何集合运算方法
 func eleInArr(ele string, arr [] string) bool {
 	for _, v := range arr {
-		if (ele == v) {
+		if ele == v {
 			fmt.Println("eleInArr", ele)
 			return true
 		}
@@ -52,9 +52,9 @@ func eleInArr(ele string, arr [] string) bool {
 
 // 检查href的是否为url
 func isUrl(str string) bool {
-	reg := regexp.MustCompile("^[A-Za-z0-9_\\-\\.\\/]+$")
+	reg := regexp.MustCompile("^https{0,1}:[A-Za-z0-9_\\-\\.\\/\\&\\?\\=]+$")
 	data := reg.Find([]byte(str))
-	if (data == nil) {
+	if data == nil {
 		return false
 	}
 	return true
@@ -117,7 +117,7 @@ func batchWriteDb() {
 	pVisited := &thisVisitedUrls
 	for _, targetDateUrl := range *p {
 		t := eleInArr(targetDateUrl, *pVisited)
-		if (!t) {
+		if !t {
 			// Instantiate default collector
 			c := colly.NewCollector()
 			// On every a element which has href attribute call callback
@@ -181,7 +181,7 @@ func getTargetDateNewUrlsBatchSave() {
 		fmt.Println(*p, "NEW------------------")
 		link := e.Attr("href")
 		fmt.Println(link)
-		if ( !strings.Contains(link, "http://") ) {
+		if !strings.Contains(link, "http://") {
 			link = "http://cn.sonhoo.com" + link
 		}
 		// 不考虑同一路径的页面更新，不重复访问uri
@@ -189,11 +189,34 @@ func getTargetDateNewUrlsBatchSave() {
 		t2 := eleInArr(link, *pVisited)
 		t3 := eleInArr(link, *pTargetDateInDb)
 		t4 := isUrl(link)
-		if (!t && !t2 && !t3 && t4) {
+		if !t && !t2 && !t3 && t4 {
 			fmt.Println("本次没被访问的url，发起访问，但可能被过滤", link)
 			c.Visit(e.Request.AbsoluteURL(link))
+			// 数据落盘
+			// http://cn.sonhoo.com/wukong/u/200078/index
+			reg := regexp.MustCompile("^.{0,}/wukong/u/\\d+/index$")
+			// 写入落盘队列
+			data := reg.Find([]byte(link))
+			if data != nil {
+				t := eleInArr(link, *p)
+				t3 := eleInArr(link, *pTargetDateInDb)
+				if !t && !t3 {
+					*p = append(*p, link)
+					fmt.Println(*p, "ADD------------")
+				}
+			}
+			// 检测是否达到批量落盘时机
+			// 待落盘数达到上限
+			// 已经访问的站点url数达到上限
+			if len(*p) > batchWriteDbLimit || len(*pVisited) > thisVisitedUrlsLimit {
+				fmt.Println("len(targetDateNewUrls) > ", batchWriteDbLimit, "len(thisVisitedUrls) > ", thisVisitedUrlsLimit)
+				//  及时入库
+				batchWriteDb()
+				refreshtargetDateInDbUrls()
+				*p = nil
+			}
 		} else {
-			fmt.Println("跳过，原因：1.1、本次程序已经访问；1.2、已经入库；2.1、非url格式；")
+			fmt.Println("跳过，", link, " 原因：1.1、本次程序已经访问；1.2、已经入库；1.3、已经写入待访问；2.1、非url格式；", t2, t3, t, !t4)
 		}
 	})
 	c.OnScraped(func(r *colly.Response) {
@@ -209,33 +232,11 @@ func getTargetDateNewUrlsBatchSave() {
 	c.OnError(func(_ *colly.Response, err error) {
 		log.Println("Something went wrong:", err)
 	})
-	// 数据落盘
+	// 记录已访问页面
 	c.OnResponse(func(r *colly.Response) {
 		fmt.Println("Visited", r.Request.URL)
 		url := fmt.Sprintln(r.Request.URL)
 		*pVisited = append(*pVisited, url)
-		// http://cn.sonhoo.com/wukong/u/200078/index
-		reg := regexp.MustCompile("^.{0,}/wukong/u/\\d+/index$")
-		// 写入落盘队列
-		data := reg.Find([]byte(url))
-		if (len(data) > 0) {
-			t := eleInArr(url, *p)
-			t3 := eleInArr(url, *pTargetDateInDb)
-			if (!t && !t3) {
-				*p = append(*p, url)
-				fmt.Println(*p, "ADD------------")
-			}
-		}
-		// 检测是否达到批量落盘时机
-		// 待落盘数达到上限
-		// 已经访问的站点url数达到上限
-		if (len(*p) > batchWriteDbLimit || len(*pVisited) > thisVisitedUrlsLimit) {
-			fmt.Println("len(targetDateNewUrls) > ", batchWriteDbLimit, "len(thisVisitedUrls) > ", thisVisitedUrlsLimit)
-			//  及时入库
-			batchWriteDb()
-			refreshtargetDateInDbUrls()
-			*p = nil
-		}
 	})
 	// Start scraping on
 	c.Visit("http://cn.sonhoo.com/wukong/")

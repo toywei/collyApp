@@ -140,7 +140,7 @@ func getTargetDateUrls() []string {
 		c.OnHTML(".showSort a[href]", func(e *colly.HTMLElement) {
 			link := e.Attr("href")
 			t := eleInArr(link, PotentialCustomerWebSiteUrlSet)
-			if (!t) {
+			if !t {
 				targetDateUrls = append(targetDateUrls, link)
 				fmt.Printf("Link found: %q -> %s\n", e.Text, link)
 			}
@@ -169,11 +169,10 @@ func getTargetDateUrls() []string {
 			d := SitePathListTargetDate["cnhan.com/hyzx/"]
 			reg := regexp.MustCompile(d) // http://www.cnhan.com/hyzx/20180827/7109076.html 通过url格式过滤出目标日的url
 			data := reg.Find([]byte(link))
-			regRes := len(data)
-			if regRes > 0 {
+			if data != nil {
 				link = "http://www.cnhan.com/hyzx/" + link
 				t := eleInArr(link, PotentialCustomerWebSiteUrlSet)
-				if (!t) {
+				if !t {
 					targetDateUrls = append(targetDateUrls, link)
 					fmt.Printf("Link found: %q -> %s\n", e.Text, link)
 				}
@@ -208,7 +207,7 @@ func getTargetDateUrls() []string {
 	c.OnHTML("a[href]", func(e *colly.HTMLElement) {
 		link := e.Attr("href")
 		t := eleInArr(link, thisVisitedUrls)
-		if (!t) {
+		if !t {
 			fmt.Println("本次没被访问的url，发起访问，但可能被过滤", link)
 			c.Visit(e.Request.AbsoluteURL(link))
 		}
@@ -221,7 +220,7 @@ func getTargetDateUrls() []string {
 			link = "http://www.cnhan.com" + link
 			fmt.Printf("Link found: %q -> %s\n", e.Text, link)
 			t := eleInArr(link, PotentialCustomerWebSiteUrlSet)
-			if (!t) {
+			if !t {
 				targetDateUrls = append(targetDateUrls, link)
 				fmt.Printf("Link found: %q -> %s\n", e.Text, link)
 			}
@@ -286,18 +285,17 @@ func getTargetDateUrls() []string {
 	c.OnHTML("a[href]", func(e *colly.HTMLElement) {
 		link := e.Attr("href")
 		t := eleInArr(link, thisVisitedUrls)
-		if (!t) {
+		if !t {
 			fmt.Println("本次没被访问的url，发起访问，但可能被过滤", link)
 			c.Visit(e.Request.AbsoluteURL(link))
 		}
 		// http://www.heze.cn/qiye/hongfei688/show-44-14825619.html
 		reg := regexp.MustCompile("^http://www.heze.cn/qiye/[0-9a-zA-Z]+/show-\\d+-\\d+\\.html$")
 		data := reg.Find([]byte(link))
-		regRes := len(data)
-		if regRes > 0 {
+		if data != nil {
 			fmt.Printf("Link found: %q -> %s\n", e.Text, link)
 			t := eleInArr(link, PotentialCustomerWebSiteUrlSet)
-			if (!t) {
+			if !t {
 				targetDateUrls = append(targetDateUrls, link)
 				fmt.Printf("Link found: %q -> %s\n", e.Text, link)
 			}
@@ -348,7 +346,7 @@ func getTargetDateUrls() []string {
 		link := e.Attr("href")
 		fmt.Printf("Link found: %q -> %s\n", e.Text, link)
 		t := eleInArr(link, thisVisitedUrls)
-		if (!t) {
+		if !t {
 			fmt.Println("本次没被访问的url，发起访问，但可能被过滤", link)
 			if (len(thisVisitedUrls) > thisVisitedUrlsLimit) {
 				fmt.Println("len(thisVisitedUrls) > 50")
@@ -372,7 +370,7 @@ func getTargetDateUrls() []string {
 		if (strings.Contains(pageDate, d)) {
 			link = "http://cn.sonhoo.com" + link
 			t := eleInArr(link, PotentialCustomerWebSiteUrlSet)
-			if (!t) {
+			if !t {
 				targetDateUrls = append(targetDateUrls, link)
 				fmt.Printf("Link found: %q -> %s\n", e.Text, link)
 			}

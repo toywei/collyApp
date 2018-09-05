@@ -1,58 +1,20 @@
-from pymongo import MongoClient
-import base64
-import requests
-import json
-import random
-import time
+from tool import selectToDic, updateOneIdKV, webImgToBase64Str
+import json, time
 
+# 全部访问路径特征清单
+# 可追加，不删除
+passPaths = ['sonhoo.com/wukong/', 'cnhan.com/shantui/', 'cnhan.com/hyzx/', 'cnhan.com/pinfo/', 'heze.cn/info/',
+             'heze.cn/qiye/']
+#  'cnhan.com/shantui/'  调用nodejs解密
 
-def selectToDic(k, collection_name, fields={}, where={},
-                c=MongoClient("mongodb://hbaseU:123@192.168.3.103:27017/hbase"), dbName='hbase'):
-    db = c[dbName]
-    collection, r = db[collection_name], {}
-    if fields == {}:
-        cursor = collection.find(where)
-    else:
-        cursor = collection.find(where, fields)
-    try:
-        for doc in cursor:
-            r[doc[k]] = doc
-    finally:
-        cursor.close()
-    return r
+# 本次程序实际处理的访问路径特征
+# 可追加，可删除
+dealPaths = ['cnhan.com/hyzx/']
+for i in dealPaths:
+    del passPaths[passPaths.index(i)]
 
-
-def updateOne(filter_id, update, collection_name,
-              c=MongoClient("mongodb://hbaseU:123@192.168.3.103:27017/hbase"), dbName='hbase'):
-    try:
-        db = c[dbName]
-        collection = db[collection_name]
-        collection.update_one({"_id": filter_id}, {'$set': update})
-    except Exception as e:
-        print(e)
-
-
-def updateOneIdKV(Id, k, v, tab='todayUrls'):
-    print(k)
-    updateOne(Id, {k: v}, tab)
-
-
-def webImgToBase64Str(imgUrl):
-    try:
-        r = requests.get(imgUrl)
-        imgByte = r.content
-        b64encode = base64.b64encode(imgByte)
-        # 'data:image/jpg;base64,' OK
-        Base64Str = 'data:image/png;base64,' + b64encode.decode('utf-8')
-        return Base64Str
-    except Exception as e:
-        time.sleep(random.random() + 1)
-        print(e)
-        return ''
-
-
-spiderDate = time.strftime("%Y%m%d", time.localtime())
-mongoWhere = {'spiderDate': spiderDate} if 11 > 2 else {}
+spiderDate = time.strftime("%Y%m%d", time.localtime()) if 11 > 2 else '20180901'
+mongoWhere = {'spiderDate': spiderDate} if 1 > 2 else {}
 
 # 请求图片
 # 本地不保存，二进制转为base64后直接写入mongodb
@@ -67,6 +29,9 @@ for i in cleanData:
         continue
     for k in kl:
         kk = '{}base64'.format(k)
+        # 字段存在，则认为，生成成功
+        if kk in item:
+            continue
         # if k in item and kk not in item:
         if k in item and 1:  # 重新生成
             imgUrl = item[k]
@@ -86,29 +51,36 @@ for i in cleanData:
 
 cleanData = selectToDic('_id', 'todayUrls', fields={'url': 1, 'comInfo': 1, 'comInfoTxt': 1, 'comName': 1},
                         where=mongoWhere)
-
 for i in cleanData:
     _id = i
     # updateOne(_id, {'cleanData': {}}, 'todayUrls')
     item = cleanData[i]
     url = item['url']
-    # 字段是否在mongodb-doc中存在
-    if 'comInfo' in item:
-        ii = json.loads(item['comInfo'])['contactInfoDto']
-        # comName,contactName,addr,telPhone,mobilePhone,qq,website
-        try:
-            k_t_d = {'comName': 'compName', 'contactName': 'contactName', 'telPhone': 'telPhone',
-                     'mobilePhone': 'mobilePhone', 'addr': 'address', 'qq': 'qq1', 'webSite': 'webSite'}
-            for k in k_t_d:
-                k_k = k_t_d[k]
-                if k_k in ii:
-                    v = ii[k_k]
-                    updateOneIdKV(_id, k, v)
-        except Exception as e:
-            print(e)
-            print(item)
-            print(item['url'])
-    elif 'www.cnhan.com/pinfo/' in url:
+
+    pathTag = 'cnhan.com/shantui/'
+    if pathTag in url:
+        if pathTag in passPaths:
+            continue
+        if 'comInfo' in item:
+            ii = json.loads(item['comInfo'])['contactInfoDto']
+            # comName,contactName,addr,telPhone,mobilePhone,qq,website
+            try:
+                k_t_d = {'comName': 'compName', 'contactName': 'contactName', 'telPhone': 'telPhone',
+                         'mobilePhone': 'mobilePhone', 'addr': 'address', 'qq': 'qq1', 'webSite': 'webSite'}
+                for k in k_t_d:
+                    k_k = k_t_d[k]
+                    if k_k in ii:
+                        v = ii[k_k]
+                        updateOneIdKV(_id, k, v)
+            except Exception as e:
+                print(e)
+                print(item)
+                print(item['url'])
+
+    pathTag = 'cnhan.com/pinfo/'
+    if pathTag in url:
+        if pathTag in passPaths:
+            continue
         '''
         '
 东莞市鹏诚包装制品有限公司
@@ -141,7 +113,11 @@ for i in cleanData:
             for k in d:
                 v = d[k]
                 updateOneIdKV(_id, k, v)
-    elif 'www.cnhan.com/hyzx/' in url:
+
+    pathTag = 'cnhan.com/hyzx/'
+    if pathTag in url:
+        if pathTag in passPaths:
+            continue
         '''
         '
 
@@ -186,7 +162,11 @@ for i in cleanData:
             for k in d:
                 v = d[k]
                 updateOneIdKV(_id, k, v)
-    elif 'http://www.heze.cn/info/' in url:
+
+    pathTag = 'heze.cn/info/'
+    if pathTag in url:
+        if pathTag in passPaths:
+            continue
         if 'comInfoTxt' in item:
             if 'comName' in item:
                 comName = item['comName']
@@ -210,7 +190,11 @@ for i in cleanData:
             for k in d:
                 v = d[k]
                 updateOneIdKV(_id, k, v)
-    elif 'http://www.heze.cn/qiye/' in url:
+
+    pathTag = 'heze.cn/qiye/'
+    if pathTag in url:
+        if pathTag in passPaths:
+            continue
         if 'comInfoTxt' in item:
             c = item['comInfoTxt'].split('\n')
             d = {}
@@ -232,33 +216,5 @@ for i in cleanData:
                 updateOneIdKV(_id, k, v)
 '''
 废除清洗后的数据聚合到mongodb-collection-一个key
-        if 'comInfoTxt' in item:
-            if 'comName' in item:
-                comName = item['comName']
-                c = item['comInfoTxt'].split(comName)[-1].split('\n')
-            else:
-                c = item['comInfoTxt'].split('\n')
-
-            d = {}
-            d['comName'] = comName
-            for cc in c:
-                # comName,contactName,addr,telPhone,mobilePhone,qq,website
-                d = {}
-                if '传 真' in cc:
-                    d['fax'] = cc.split('：')[-1]
-                elif '手 机' in cc:
-                    d['mobilePhone'] = cc.split('：')[-1]
-                elif '电 话' in cc:
-                    d['telPhone'] = cc.split('：')[-1]
-                elif '地 址' in cc:
-                    d['addr'] = cc.split('：')[-1]
-                elif '公司地址' in cc:
-                    d['addr'] = cc.split('：')[-1]
-                elif '官 网' in cc:
-                    d['webSite'] = cc.split('：')[-1]
-                elif '联系人' in cc:
-                    d['contactName'] = cc.split('：')[-1]
-
-
         updateOne(_id, {'cleanData': d}, 'todayUrls')
 '''

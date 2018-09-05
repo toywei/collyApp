@@ -32,6 +32,7 @@ MongoClient.connect(mongoCfg.uri, function (err, client) {
                 _id: mgid
             }
             const comInfo = customerDecode(ii.Base64parse2times.replace('{"r":"', '').replace('"}', ''))
+            console.log(comInfo)
             const val = {
                 $set: {
                     comInfo: comInfo

@@ -1,10 +1,6 @@
-from pymongo import MongoClient
+from tool import RandomString, selectToDic, updateOne
 from bs4 import BeautifulSoup
-import requests
-import time
-import json
-from tool import RandomString
-import random
+import requests, time, json, random
 
 '''
 http://www.cnhan.com/shantui//templates/MC530/TP001/js/template.js
@@ -61,48 +57,33 @@ $.ajax({
 
 '''
 
+# 全部访问路径特征清单
+# 可追加，不删除
+passPaths = ['sonhoo.com/wukong/', 'cnhan.com/shantui/', 'cnhan.com/hyzx/', 'cnhan.com/pinfo/', 'heze.cn/info/',
+             'heze.cn/qiye/']
+#  'cnhan.com/shantui/'  调用nodejs解密
 
-def selectToDic(k, collection_name, fields={}, where={},
-                c=MongoClient("mongodb://hbaseU:123@192.168.3.103:27017/hbase"), dbName='hbase'):
-    db = c[dbName]
-    collection, r = db[collection_name], {}
-    if fields == {}:
-        cursor = collection.find(where)
-    else:
-        cursor = collection.find(where, fields)
-    try:
-        for doc in cursor:
-            r[doc[k]] = doc
-    finally:
-        cursor.close()
-    return r
+# 本次程序实际处理的访问路径特征
+# 可追加，可删除
+dealPaths = ['cnhan.com/hyzx/']
+for i in dealPaths:
+    del passPaths[passPaths.index(i)]
 
-
-def updateOne(filter_id, update, collection_name,
-              c=MongoClient("mongodb://hbaseU:123@192.168.3.103:27017/hbase"), dbName='hbase'):
-    try:
-        db = c[dbName]
-        collection = db[collection_name]
-        collection.update_one({"_id": filter_id}, {'$set': update})
-    except Exception as e:
-        print(e)
-
-
-spiderDate = time.strftime("%Y%m%d", time.localtime())
+spiderDate = time.strftime("%Y%m%d", time.localtime()) if 1 > 2 else '20180830'
 collectionName = 'todayUrls'
 mongoWhere = {'spiderDate': spiderDate} if 11 > 2 else {}
 urlHtml = selectToDic('_id', collectionName, fields={'url': 1, 'html': 1, 'spiderDate': 1, 'Base64parse2times': 1},
                       where=mongoWhere)
-
 for i in urlHtml:
     _id = i
     item = urlHtml[i]
-    url = item['url'].replace('\n', '')
+    url, spiderDate, html = item['url'].replace('\n', ''), item['spiderDate'], item['html']
     updateOne(_id, {'url': url}, collectionName)
 
-    html = item['html']
-    spiderDate = item['spiderDate']
-    if 'sonhoo.com/wukong/' in url:
+    pathTag = 'sonhoo.com/wukong/'
+    if pathTag in url:
+        if pathTag in passPaths:
+            continue
         soup = BeautifulSoup(html, 'html.parser')
         try:
             comName = soup.find("title").text.split('-')[-1].replace('【', '').replace('】', '')
@@ -111,12 +92,15 @@ for i in urlHtml:
             dd = d['data']
             updateOne(_id, {'comName': comName, 'mobilePhone': dd['telephone'], 'qq': dd['qq'], 'addr': dd['address'],
                             'contactName': dd['linkman']}, collectionName)
-            print('ok-->', spiderDate, url)
+            print('ok-->', spiderDate, url, soup.find("title").text)
         except Exception as e:
             print(e)
             print(url)
 
-    if 'cnhan.com/shantui' in url:
+    pathTag = 'cnhan.com/shantui/'
+    if pathTag in url:
+        if pathTag in passPaths:
+            continue
         # 仅仅请求一次，且假设返回正确、正确入库
         if 'Base64parse2times' in item:
             continue
@@ -144,8 +128,10 @@ for i in urlHtml:
             print(e)
 
     # 客户资料在mogo的html中，但是没有联系方式详情页完整
-    plainTag = 'http://www.cnhan.com/hyzx/'
-    if plainTag in url:
+    pathTag = 'cnhan.com/hyzx/'
+    if pathTag in url:
+        if pathTag in passPaths:
+            continue
         soup = BeautifulSoup(html, 'html.parser')
         _ = soup.find_all('a')
         contactTag = '../contact_'
@@ -153,36 +139,43 @@ for i in urlHtml:
             if 'href' in i.attrs:
                 href = i.attrs['href']
                 if contactTag in href:
-                    contactUrl = '{}{}'.format(plainTag, href.replace('../', ''))
+                    contactUrl = '{}{}{}'.format('http://www.', pathTag, href.replace('../', ''))
                     updateOne(_id, {'contactUrl': contactUrl}, collectionName)
                     try:
                         headers = {'User-Agent': RandomString()}
                         r = requests.get(contactUrl, headers=headers)
+                        html = r.text
+                        print(r)
+                        soup = BeautifulSoup(html, 'html.parser')
+                        comName = soup.find('title').text.split('-')[0]
+                        updateOne(_id, {'comName': comName}, collectionName)
                         time.sleep(random.random())
                         # 已经在页面校验,
                         # 1-出现则唯一;2-出现且出现其中的一个；
                         class_l = ['lxfs', 'cp_rcc', 'about', 'lx_c', 'describe', 'nsmsg', 'lxwmjs', 'newscon',
                                    'dis_content2', 'lxwm', 'case_right_box', 'mrb2_list', 'cen_lt', 'contact_top',
-                                   'content']
+                                   'content', 'center']
                         for c_ in class_l:
-                            findChk = BeautifulSoup(r.text, 'html.parser').find(class_=c_)
+                            findChk = soup.find(class_=c_)
                             if findChk is not None:
                                 comInfoTxt = findChk.text.replace('\n\n', '\n').replace('\t\t', '\t')
                                 dropTag_tail_l = ['纬度']
-                                comName = BeautifulSoup(r.text, 'html.parser').find('title').split('-')[0]
                                 for sp in dropTag_tail_l:
                                     comInfoTxt = comInfoTxt.split(sp)[0]
                                     print(comInfoTxt)
                                 updateOne(_id, {'comName': comName, 'comInfoTxt': comInfoTxt}, collectionName)
                     except Exception as e:
-                        print('NOT-match')
+                        print('NOT-match-------------------->')
                         print(e)
                         print(url)
                         print(contactUrl)
+                        print('NOT-match<--------------------')
 
     # 客户联系电话在唯普通的可以ocr识别的图片中，但是联系方式详情页存在于可以直接获取的html中
-    plainTag = 'http://www.heze.cn/info/'
-    if plainTag in url:
+    pathTag = 'heze.cn/info/'
+    if pathTag in url:
+        if pathTag in passPaths:
+            continue
         bizInfoAuthorId = html.split('nav?uid=')[-1].split('"></script>')[0]
         # js 写入http://www.heze.cn/info/index/author/author/1461.html
         # 呈现的页面 http://www.heze.cn/info/product/contactus/id/1461.html
@@ -211,13 +204,13 @@ for i in urlHtml:
             print(url)
             print(contactUrl)
 
-            dd = 9
-
     # 客户联系电话在唯普通的可以ocr识别的图片中，但是联系方式详情页存在于可以直接获取的html中
     # 入口页 http://www.heze.cn/qiye/15044035888/show-30-4885060.html
     # 联系页 http://www.heze.cn/qiye/sp-15044035888-lianxi.html
-    plainTag = 'http://www.heze.cn/qiye/'
-    if plainTag in url:
+    pathTag = 'heze.cn/qiye/'
+    if pathTag in url:
+        if pathTag in passPaths:
+            continue
         bizQiyeId = url.split('http://www.heze.cn/qiye/')[-1].split('/')[0]
         contactUrl = 'http://www.heze.cn/qiye/sp-{}-lianxi.html'.format(bizQiyeId)
         updateOne(_id, {'contactUrl': contactUrl, 'bizQiyeId': bizQiyeId}, collectionName)
@@ -256,8 +249,10 @@ for i in urlHtml:
     # 入口页 http://www.cnhan.com/pinfo/313509.html
     # 店铺页 http://www.cnhan.com/pinfo/company-67751.html
     # 联系页 http://www.cnhan.com/pinfo/company-67751-contact.html
-    plainTag = 'http://www.cnhan.com/pinfo/'
-    if plainTag in url:
+    pathTag = 'cnhan.com/pinfo/'
+    if pathTag in url:
+        if pathTag in passPaths:
+            continue
         bizPinfoId = html.split('.html">进入店铺')[0].split('company-')[-1]
         if bizPinfoId == '':
             siteException = '{} 店铺页面不存在或已删除'.format(url)
