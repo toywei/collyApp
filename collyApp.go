@@ -81,7 +81,7 @@ func eggSitePathListTargetDate(TargetDate string) map[string]string {
 }
 
 //  指定日期数据采集
-var TargetDate = "20180904"
+var TargetDate = "20180905"
 var TodayDate = time.Now().Format("20060102")
 var mongoCollectioName = "todayUrls"
 var SitePathListTargetDate = eggSitePathListTargetDate(TargetDate)
@@ -132,7 +132,7 @@ func getTargetDateUrls() []string {
 		// 路径下只有当日url
 		// Instantiate default collector
 		c = colly.NewCollector(
-			colly.AllowedDomains("Twww.cnhan.com"),
+			colly.AllowedDomains("www.cnhan.com"),
 		)
 		// On every a element which has href attribute call callback
 		// 类选择器
@@ -151,7 +151,7 @@ func getTargetDateUrls() []string {
 		// 起始路由改变
 		// Instantiate default collector
 		c = colly.NewCollector(
-			colly.AllowedDomains("Twww.cnhan.com"),
+			colly.AllowedDomains("www.cnhan.com"),
 			colly.URLFilters(
 				//请求页面的正则表达式，满足其一即可
 				//http://www.cnhan.com/hyzx/
@@ -195,7 +195,7 @@ func getTargetDateUrls() []string {
 	// 起始路由改变
 	// Instantiate default collector
 	c = colly.NewCollector(
-		colly.AllowedDomains("Twww.cnhan.com"),
+		colly.AllowedDomains("www.cnhan.com"),
 		colly.URLFilters(
 			//请求页面的正则表达式，满足其一即可
 			//http://www.cnhan.com/pinfo/
@@ -242,7 +242,7 @@ func getTargetDateUrls() []string {
 	// 起始路由改变
 	// Instantiate default collector
 	c = colly.NewCollector(
-		colly.AllowedDomains("Twww.heze.cn"),
+		colly.AllowedDomains("www.heze.cn"),
 	)
 	// On every a element which has href attribute call callback
 	// 类选择器
@@ -276,7 +276,7 @@ func getTargetDateUrls() []string {
 	//http://www.heze.cn/qiye/list-8.html
 	// Instantiate default collector
 	c = colly.NewCollector(
-		colly.AllowedDomains("Twww.heze.cn"),
+		colly.AllowedDomains("www.heze.cn"),
 		colly.URLFilters(
 			//请求页面的正则表达式，满足其一即可
 			regexp.MustCompile("^http://www.heze.cn/qiye/(.{0}$)|(list-\\d+-\\d+\\.html$)"),
