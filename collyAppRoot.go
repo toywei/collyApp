@@ -52,17 +52,7 @@ func eleInArr(ele string, arr [] string) bool {
 
 // 检查href的是否为url
 func isUrl(str string) bool {
-	f := [] string{"javascript:", "tel:"}
-	if (strings.Replace(str, " ", "", -1) == "") {
-		return false
-	}
-	for _, v := range f {
-		if ( strings.Contains(str, v)) {
-			return false
-		}
-	}
-	// 可概括上述规则
-	reg := regexp.MustCompile("^.+[0-9a-zA-z]{1,}$")
+	reg := regexp.MustCompile("^[A-Za-z0-9_\\-\\.\\/]+$")
 	data := reg.Find([]byte(str))
 	if (data == nil) {
 		return false
@@ -199,7 +189,7 @@ func getTargetDateNewUrlsBatchSave() {
 		t2 := eleInArr(link, *pVisited)
 		t3 := eleInArr(link, *pTargetDateInDb)
 		t4 := isUrl(link)
-		if (!t && !t2 && !t3 && !t4) {
+		if (!t && !t2 && !t3 && t4) {
 			fmt.Println("本次没被访问的url，发起访问，但可能被过滤", link)
 			c.Visit(e.Request.AbsoluteURL(link))
 		} else {
