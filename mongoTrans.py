@@ -34,13 +34,13 @@ def improve():
             updateOneIdKV(_id, 'webSite', webSite.replace('URL:', ''))
 
 
-def uniqueUrlSpiderDate():
+def uniqueUrlSpiderDate(collectionMame='todayUrls'):
     '''
     当日url + spiderDate留其一
     :return:
     '''
     spiderDate_url_set = {}
-    cleanData = selectToDic('_id', 'todayUrls', fields={'spiderDate': 1, 'url': 1})
+    cleanData = selectToDic('_id', collectionMame, fields={'spiderDate': 1, 'url': 1})
     for i in cleanData:
         _id = i
         item = cleanData[i]
@@ -56,9 +56,10 @@ def uniqueUrlSpiderDate():
     for i in cleanData:
         _id = i
         if _id not in save_id_l:
-            deleteOne({'_id': _id}, 'todayUrls')
+            deleteOne({'_id': _id}, collectionMame)
             print('uniqueUrlSpiderDate', _id)
 
 
-improve()
-uniqueUrlSpiderDate()
+# improve()
+# uniqueUrlSpiderDate()
+uniqueUrlSpiderDate('siteUserPage')
