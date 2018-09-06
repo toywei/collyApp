@@ -17,7 +17,6 @@ func RandomString() string {
 	return string(b)
 }
 
-
 // 检查元素是否存在于数组？遍历？如何集合运算方法
 func EleInArr(ele string, arr [] string) bool {
 	for _, v := range arr {
@@ -38,6 +37,3 @@ func IsUrl(str string) bool {
 	}
 	return true
 }
-
-
-
