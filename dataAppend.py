@@ -58,8 +58,8 @@ $.ajax({
 
 '''
 
-claenDbSwitcher = True if 2 > 61 else False
-if claenDbSwitcher:
+cleanDbSwitcher = True if 7 > 9 else False
+if cleanDbSwitcher:
     improve()
     uniqueUrlSpiderDate()
     uniqueUrlSpiderDate('siteUserPage')
@@ -76,9 +76,9 @@ dealPaths = ['cnhan.com/pinfo/']
 for i in dealPaths:
     del passPaths[passPaths.index(i)]
 
-spiderDate = time.strftime("%Y%m%d", time.localtime()) if 11 > 2 else '20180830'
+spiderDate = time.strftime("%Y%m%d", time.localtime()) if 11 > 9 else '20180830'
 collectionName = 'todayUrls'
-mongoWhere = {'spiderDate': spiderDate} if 11 > 2 else {}
+mongoWhere = {'spiderDate': spiderDate} if 11 > 9 else {}
 urlHtml = selectToDic('_id', collectionName, fields={'url': 1, 'html': 1, 'spiderDate': 1, 'Base64parse2times': 1},
                       where=mongoWhere)
 
@@ -262,7 +262,15 @@ for i in urlHtml:
     if pathTag in url:
         if pathTag in passPaths:
             continue
+        print(url, spiderDate)
+
+        soup = BeautifulSoup(html, 'html.parser')
+        # 不准确的字段，更新
+        comName = soup.find('title').text.split('-')[0].replace('  ', '').replace(' ', '')
+        updateOne(_id, {'comName': comName}, collectionName)
+
         bizPinfoId = html.split('.html">进入店铺')[0].split('company-')[-1]
+
         if bizPinfoId == '':
             siteException = '{} 店铺页面不存在或已删除'.format(url)
             updateOne(_id, {'siteException': siteException}, collectionName)
@@ -271,22 +279,24 @@ for i in urlHtml:
         contactUrl = 'http://www.cnhan.com/pinfo/company-{}-contact.html'.format(bizPinfoId)
         updateOne(_id, {'contactUrl': contactUrl, 'bizPinfoId': bizPinfoId}, collectionName)
         try:
-            r = requests.get(contactUrl)
+            headers = {'User-Agent': RandomString()}
+            r = requests.get(contactUrl, headers=headers)
             comName = r.text.split('title>')[1].split('-')[-1].split('<')[0]
             updateOne(_id, {'comName': comName}, collectionName)
 
+            html = r.text
+            # 不准确的字段，先入库后再发起请求更新
+            comName = soup.find('title').text.split('-')[-1].replace('  ', '').replace(' ', '')
+            updateOne(_id, {'comName': comName}, collectionName)
+            print(contactUrl, html)
+
             # 已经在页面校验,
             # 1-出现则唯一;2-出现且出现其中的一个；
-            class_l = ['con_left', 'n_contact']
+            class_l = ['con_left', 'n_contact', 'con_con']
             for c_ in class_l:
-                findChk = BeautifulSoup(r.text, 'html.parser').find(class_=c_)
+                findChk = BeautifulSoup(html, 'html.parser').find(class_=c_)
                 if findChk is not None:
                     comInfoTxt = findChk.text
-                    # dropTag_tail_l = ['']
-                    # for sp in dropTag_tail_l:
-                    #     comInfoTxt = comInfoTxt.split(sp)[0]
-                    #     comName = r.text.split('title>')[1].split('-')[-1].split('<')[0]
-                    #     print(comInfoTxt)
                     print(comInfoTxt)
                     updateOne(_id, {'comInfoTxt': comInfoTxt}, collectionName)
         except Exception as e:

@@ -54,10 +54,10 @@ type PotentialCustomerWebSiteUrl struct {
 //  指定日期数据采集
 var TargetDate = "20180906"
 var TodayDate = time.Now().Format("20060102")
-var mongoCollectioName = "todayUrls0906"
+var mongoCollectioName = "todayUrls"
 var SitePathListTargetDate = eggSitePathListTargetDate(TargetDate)
 var thisVisitedUrls [] string
-var thisVisitedUrlsLimit = 200
+var thisVisitedUrlsLimit = 6000
 
 // url汇总页的日期筛选方法
 func eggSitePathListTargetDate(TargetDate string) map[string]string {
@@ -113,7 +113,7 @@ func getTargetDateUrls() []string {
 		// 路径下只有当日url
 		// Instantiate default collector
 		c = colly.NewCollector(
-			colly.AllowedDomains("Twww.cnhan.com"),
+			colly.AllowedDomains("www.cnhan.com"),
 		)
 		// On every a element which has href attribute call callback
 		// 类选择器
@@ -132,7 +132,7 @@ func getTargetDateUrls() []string {
 		// 起始路由改变
 		// Instantiate default collector
 		c = colly.NewCollector(
-			colly.AllowedDomains("Twww.cnhan.com"),
+			colly.AllowedDomains("www.cnhan.com"),
 			colly.URLFilters(
 				//请求页面的正则表达式，满足其一即可
 				// http://www.cnhan.com/hyzx/
@@ -195,8 +195,7 @@ func getTargetDateUrls() []string {
 		t := pTool.EleInArr(link, PotentialCustomerWebSiteUrlSet)
 		t1 := pTool.IsUrl(link)
 		if !t && t1 {
-			targetDateUrls = append(targetDateUrls, link)
-			fmt.Printf("Link found: %q -> %s\n", e.Text, link)
+			c.Visit(e.Request.AbsoluteURL(link))
 		}
 	})
 	// 获取目标url
@@ -210,7 +209,11 @@ func getTargetDateUrls() []string {
 		if (strings.Contains(articleDate, d)) {
 			link = "http://www.cnhan.com" + link
 			t := pTool.EleInArr(link, PotentialCustomerWebSiteUrlSet)
-			if !t {
+			// http://www.cnhan.com/pinfo/318056.html
+			f := "^http://www.cnhan.com/pinfo/\\d+\\.html$"
+			reg := regexp.MustCompile(f)
+			data := reg.Find([]byte(link))
+			if !t && data != nil {
 				targetDateUrls = append(targetDateUrls, link)
 				fmt.Printf("Link found: %q -> %s\n", e.Text, link)
 			}
@@ -232,7 +235,7 @@ func getTargetDateUrls() []string {
 	// 起始路由改变
 	// Instantiate default collector
 	c = colly.NewCollector(
-		colly.AllowedDomains("Twww.heze.cn"),
+		colly.AllowedDomains("www.heze.cn"),
 	)
 	// On every a element which has href attribute call callback
 	// 类选择器
@@ -266,7 +269,7 @@ func getTargetDateUrls() []string {
 	// http://www.heze.cn/qiye/list-8.html
 	// Instantiate default collector
 	c = colly.NewCollector(
-		colly.AllowedDomains("Twww.heze.cn"),
+		colly.AllowedDomains("www.heze.cn"),
 		colly.URLFilters(
 			//请求页面的正则表达式，满足其一即可
 			regexp.MustCompile("^http://www.heze.cn/qiye/(.{0}$)|(list-\\d+-\\d+\\.html$)"),
@@ -310,7 +313,7 @@ func getTargetDateUrls() []string {
 	// 类目页 http://cn.sonhoo.com/wukong/c133
 	// 文章页 http://cn.sonhoo.com/wukong/a191114
 	c = colly.NewCollector(
-		colly.AllowedDomains("Tcn.sonhoo.com"),
+		colly.AllowedDomains("cn.sonhoo.com"),
 		colly.URLFilters(
 			//请求页面的正则表达式，满足其一即可
 			regexp.MustCompile("^http://cn.sonhoo.com/wukong/$"),
@@ -340,7 +343,6 @@ func getTargetDateUrls() []string {
 		if !t {
 			fmt.Println("本次没被访问的url，发起访问，但可能被过滤", link)
 			if (len(thisVisitedUrls) > thisVisitedUrlsLimit) {
-				fmt.Println("len(thisVisitedUrls) > 50")
 				return
 			}
 			c.Visit(e.Request.AbsoluteURL(link))
@@ -407,6 +409,7 @@ func main() {
 			reqUrl := fmt.Sprintln(r.Request.URL)
 			strings.Replace(reqUrl, "\n", "", -1)
 			wholePageHtml := string(r.Body)
+			fmt.Println(wholePageHtml)
 			client, err := mongo.Connect(context.Background(), "mongodb://hbaseU:123@192.168.3.103:27017/hbase", nil)
 			db := client.Database("hbase")
 			coll := db.Collection(mongoCollectioName)

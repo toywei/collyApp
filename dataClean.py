@@ -9,7 +9,8 @@ passPaths = ['sonhoo.com/wukong/', 'cnhan.com/shantui/', 'cnhan.com/hyzx/', 'cnh
 
 # 本次程序实际处理的访问路径特征
 # 可追加，可删除
-dealPaths = ['cnhan.com/pinfo/']
+dealPaths = ['sonhoo.com/wukong/', 'cnhan.com/shantui/', 'cnhan.com/hyzx/', 'cnhan.com/pinfo/', 'heze.cn/info/',
+             'heze.cn/qiye/']
 for i in dealPaths:
     del passPaths[passPaths.index(i)]
 
@@ -106,7 +107,7 @@ for i in cleanData:
                     d['fax'] = cc.split('：')[-1]
                 elif '手机号码' in cc:
                     d['mobilePhone'] = cc.split('：')[-1]
-                elif '联系电话' in cc:
+                elif '联系电话' in cc or '客服热线：' in cc:
                     d['telPhone'] = cc.split('：')[-1]
                 elif '详细地址' in cc:
                     d['addr'] = cc.split('：')[-1]

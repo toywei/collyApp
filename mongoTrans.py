@@ -1,4 +1,5 @@
 from tool import *
+import re
 
 '''
 危险区，操作不可逆
@@ -15,11 +16,25 @@ from tool import *
 可逆操作
 '''
 
-
 # 更新日期字符串冗余- .replace('-', '')
 # 更新website字段冗余 .replace('URL:', '')
 # cleanData = selectToDic('_id', 'todayUrls', fields={'webSite': 1, 'spiderDate': 1})
 # cleanData = selectToDic('_id', 'todayUrls', fields={'Base64parse2times': { '$exists': True}})
+if 11 > 2:
+    collection_name = 'todayUrls'
+    cleanData = selectToDic('_id', collection_name, fields={'url': 1}, where={'spiderDate': '20180906'})
+    delIds = []
+    for i in cleanData:
+        _id = i
+        item = cleanData[i]
+        url = item['url']
+        pathTag = 'cnhan.com/pinfo/'
+        # 通过正则删除
+        if pathTag in url and re.match('^http://www.cnhan.com/pinfo/\d+\.html$',
+                                       url) is None:
+            print(_id, url)
+            deleteOne({'_id': _id}, collection_name)
+
 
 def improve():
     cleanData = selectToDic('_id', 'todayUrls', fields={})
@@ -60,6 +75,7 @@ def uniqueUrlSpiderDate(collectionMame='todayUrls'):
             print('uniqueUrlSpiderDate', _id)
 
 
-# improve()
-uniqueUrlSpiderDate()
-uniqueUrlSpiderDate('siteUserPage')
+if __name__ == "__main__":
+    improve()
+    uniqueUrlSpiderDate()
+    uniqueUrlSpiderDate('siteUserPage')
