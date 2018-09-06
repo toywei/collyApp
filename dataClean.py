@@ -9,18 +9,22 @@ passPaths = ['sonhoo.com/wukong/', 'cnhan.com/shantui/', 'cnhan.com/hyzx/', 'cnh
 
 # 本次程序实际处理的访问路径特征
 # 可追加，可删除
-dealPaths = ['cnhan.com/hyzx/']
+dealPaths = ['cnhan.com/pinfo/']
 for i in dealPaths:
     del passPaths[passPaths.index(i)]
 
+delImgSwitcher = True if 2 > 61 else False
+
 spiderDate = time.strftime("%Y%m%d", time.localtime()) if 11 > 2 else '20180901'
-mongoWhere = {'spiderDate': spiderDate} if 1 > 2 else {}
+mongoWhere = {'spiderDate': spiderDate} if 61 > 2 else {}
 
 # 请求图片
 # 本地不保存，二进制转为base64后直接写入mongodb
 cleanData = selectToDic('_id', 'todayUrls', fields={'url': 1, 'telImg': 1, 'phoneImg': 1, 'wxImg': 1},
                         where=mongoWhere)
 for i in cleanData:
+    if not delImgSwitcher:
+        break
     _id = i
     item = cleanData[i]
     kl = ['telImg', 'phoneImg', 'wxImg']

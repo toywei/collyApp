@@ -12,11 +12,8 @@ import (
 	"gopkg.in/mgo.v2"
 	mgoBson "gopkg.in/mgo.v2/bson"
 	"time"
-	"math/rand"
+	pTool "./mypack"
 )
-
-// Configuration | Colly http://go-colly.org/docs/introduction/configuration/
-const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 type SiteUrl struct {
 	Url string `bson:"url"`
@@ -30,35 +27,6 @@ var thisVisitedUrlsLimit = 30000
 var batchWriteDbLimit = 0
 var targetDateNewUrls []string
 var targetDateInDbUrls [] string
-
-func RandomString() string {
-	b := make([]byte, rand.Intn(10)+10)
-	for i := range b {
-		b[i] = letterBytes[rand.Intn(len(letterBytes))]
-	}
-	return string(b)
-}
-
-// 检查元素是否存在于数组？遍历？如何集合运算方法
-func eleInArr(ele string, arr [] string) bool {
-	for _, v := range arr {
-		if ele == v {
-			fmt.Println("eleInArr", ele)
-			return true
-		}
-	}
-	return false
-}
-
-// 检查href的是否为url
-func isUrl(str string) bool {
-	reg := regexp.MustCompile("^https{0,1}:[A-Za-z0-9_\\-\\.\\/\\&\\?\\=]+$")
-	data := reg.Find([]byte(str))
-	if data == nil {
-		return false
-	}
-	return true
-}
 
 /*
 task
@@ -112,11 +80,12 @@ func refreshtargetDateInDbUrls() {
 }
 
 func batchWriteDb() {
-	refreshtargetDateInDbUrls()
 	p := &targetDateNewUrls
-	pVisited := &thisVisitedUrls
 	for _, targetDateUrl := range *p {
-		t := eleInArr(targetDateUrl, *pVisited)
+		// 多线程
+		pTargetDateInDb := &targetDateInDbUrls
+		refreshtargetDateInDbUrls()
+		t := pTool.EleInArr(targetDateUrl, *pTargetDateInDb)
 		if !t {
 			// Instantiate default collector
 			c := colly.NewCollector()
@@ -185,21 +154,23 @@ func getTargetDateNewUrlsBatchSave() {
 			link = "http://cn.sonhoo.com" + link
 		}
 		// 不考虑同一路径的页面更新，不重复访问uri
-		t := eleInArr(link, *p)
-		t2 := eleInArr(link, *pVisited)
-		t3 := eleInArr(link, *pTargetDateInDb)
-		t4 := isUrl(link)
+		t := pTool.EleInArr(link, *p)
+		t2 := pTool.EleInArr(link, *pVisited)
+		t3 := pTool.EleInArr(link, *pTargetDateInDb)
+		t4 := pTool.IsUrl(link)
 		if !t && !t2 && !t3 && t4 {
 			fmt.Println("本次没被访问的url，发起访问，但可能被过滤", link)
 			c.Visit(e.Request.AbsoluteURL(link))
+			// 假定访问成功
+			*pVisited = append(*pVisited, link)
 			// 数据落盘
 			// http://cn.sonhoo.com/wukong/u/200078/index
 			reg := regexp.MustCompile("^.{0,}/wukong/u/\\d+/index$")
 			// 写入落盘队列
 			data := reg.Find([]byte(link))
 			if data != nil {
-				t := eleInArr(link, *p)
-				t3 := eleInArr(link, *pTargetDateInDb)
+				t := pTool.EleInArr(link, *p)
+				t3 := pTool.EleInArr(link, *pTargetDateInDb)
 				if !t && !t3 {
 					*p = append(*p, link)
 					fmt.Println(*p, "ADD------------")
@@ -227,7 +198,7 @@ func getTargetDateNewUrlsBatchSave() {
 	// Before making a request print "Visiting ..."
 	c.OnRequest(func(r *colly.Request) {
 		fmt.Println("Visiting", r.URL.String())
-		r.Headers.Set("User-Agent", RandomString())
+		r.Headers.Set("User-Agent", pTool.RandomString())
 	})
 	c.OnError(func(_ *colly.Response, err error) {
 		log.Println("Something went wrong:", err)
@@ -235,8 +206,6 @@ func getTargetDateNewUrlsBatchSave() {
 	// 记录已访问页面
 	c.OnResponse(func(r *colly.Response) {
 		fmt.Println("Visited", r.Request.URL)
-		url := fmt.Sprintln(r.Request.URL)
-		*pVisited = append(*pVisited, url)
 	})
 	// Start scraping on
 	c.Visit("http://cn.sonhoo.com/wukong/")

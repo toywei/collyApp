@@ -1,4 +1,5 @@
 from tool import RandomString, selectToDic, updateOne
+from mongoTrans import improve, uniqueUrlSpiderDate
 from bs4 import BeautifulSoup
 import requests, time, json, random
 
@@ -57,6 +58,12 @@ $.ajax({
 
 '''
 
+claenDbSwitcher = True if 2 > 61 else False
+if claenDbSwitcher:
+    improve()
+    uniqueUrlSpiderDate()
+    uniqueUrlSpiderDate('siteUserPage')
+
 # 全部访问路径特征清单
 # 可追加，不删除
 passPaths = ['sonhoo.com/wukong/', 'cnhan.com/shantui/', 'cnhan.com/hyzx/', 'cnhan.com/pinfo/', 'heze.cn/info/',
@@ -65,15 +72,16 @@ passPaths = ['sonhoo.com/wukong/', 'cnhan.com/shantui/', 'cnhan.com/hyzx/', 'cnh
 
 # 本次程序实际处理的访问路径特征
 # 可追加，可删除
-dealPaths = ['cnhan.com/hyzx/']
+dealPaths = ['cnhan.com/pinfo/']
 for i in dealPaths:
     del passPaths[passPaths.index(i)]
 
-spiderDate = time.strftime("%Y%m%d", time.localtime()) if 1 > 2 else '20180830'
+spiderDate = time.strftime("%Y%m%d", time.localtime()) if 11 > 2 else '20180830'
 collectionName = 'todayUrls'
 mongoWhere = {'spiderDate': spiderDate} if 11 > 2 else {}
 urlHtml = selectToDic('_id', collectionName, fields={'url': 1, 'html': 1, 'spiderDate': 1, 'Base64parse2times': 1},
                       where=mongoWhere)
+
 for i in urlHtml:
     _id = i
     item = urlHtml[i]
@@ -176,6 +184,7 @@ for i in urlHtml:
     if pathTag in url:
         if pathTag in passPaths:
             continue
+        print(html)
         bizInfoAuthorId = html.split('nav?uid=')[-1].split('"></script>')[0]
         # js 写入http://www.heze.cn/info/index/author/author/1461.html
         # 呈现的页面 http://www.heze.cn/info/product/contactus/id/1461.html
