@@ -102,12 +102,9 @@
     }
     urlPlatformListHtml += '</select></div>'
 
-    const $ID = (p) => {
-        return document.getElementById(p)
-    }
-    const $CLASS = (p) => {
-        return document.getElementsByClassName(p)
-    }
+    const $ID = (p) => document.getElementById(p)
+    const $CLASS = (p) => document.getElementsByClassName(p)
+
 
     $ID('urlPlatformListHtml').innerHTML = urlPlatformListHtml
 
