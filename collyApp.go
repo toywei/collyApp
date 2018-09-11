@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/gocolly/colly"
+	"github.com/gocolly/colly/proxy"
 	"regexp"
 	"strings"
 	"github.com/mongodb/mongo-go-driver/mongo"
@@ -52,7 +53,7 @@ type PotentialCustomerWebSiteUrl struct {
 }
 
 //  指定日期数据采集
-var TargetDate = "20180906"
+var TargetDate = "20180911"
 var TodayDate = time.Now().Format("20060102")
 var mongoCollectioName = "todayUrls"
 var SitePathListTargetDate = eggSitePathListTargetDate(TargetDate)
@@ -325,6 +326,12 @@ func getTargetDateUrls() []string {
 		// 不加UA，无数据
 		// colly.UserAgent("Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36"),
 	)
+
+	rp, err := proxy.RoundRobinProxySwitcher("http://121.69.37.6:9797", "http://112.95.18.143:8088")
+	if err != nil {
+		log.Fatal(err)
+	}
+	c.SetProxyFunc(rp)
 	// 限制线程数，引入随机延迟
 	// Limit the number of threads started by colly to two
 	// when visiting links which domains' matches "*httpbin.*" glob
@@ -404,6 +411,13 @@ func main() {
 	for _, targetDateUrl := range targetDateUrls {
 		// Instantiate default collector
 		c := colly.NewCollector()
+
+		rp, err := proxy.RoundRobinProxySwitcher("http://121.69.37.6:9797", "http://112.95.18.143:8088")
+		if err != nil {
+			log.Fatal(err)
+		}
+		c.SetProxyFunc(rp)
+
 		// On every a element which has href attribute call callback
 		c.OnScraped(func(r *colly.Response) {
 			reqUrl := fmt.Sprintln(r.Request.URL)
