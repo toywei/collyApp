@@ -1,20 +1,24 @@
 {{define "PotentialCustomer"}}
 <!DOCTYPE html>
 <html lang="zh-cmn-Hans">
+
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=0">
     <title>潜在客户信息</title>
     <link rel="stylesheet" href="/static/WeUI_files/weui.css">
     <link rel="stylesheet" href="/static/WeUI_files/example.css">
-</head><style>
+</head>
+<style>
     .rowHover:hover {
         background-color: #09BB07;
     }
-    .selectItem{
-        color:#1E90FF
+
+    .selectItem {
+        color: #1E90FF
     }
 </style>
+
 <body style="margin:1em ;">
 <div class="weui-cells page__category-content">
     <div class="page__hd">
@@ -23,7 +27,7 @@
     </div>
 </div>
 
-<div id="urlPlatformListHtml" class="weui-cell weui-cell_select" >
+<div id="urlPlatformListHtml" class="weui-cell weui-cell_select">
 </div>
 
 <div class="weui-cells page__category-content">
@@ -63,27 +67,38 @@
 </div>
 <div class="weui-cells page__category-content">
     <div class="page__hd">
-        <div id="goDetail"></div>
+        <div id="goThisDaySummary"></div>
+    </div>
+    <div class="page__hd">
+        <div id="goTodayDetail"></div>
+    </div>
+    <div class="page__hd">
+        <div id="goTodaySummary"></div>
     </div>
 </div>
-</body>
-</html>
 
+
+</body>
+
+</html>
 <script>
     const GO = {{.}}
-</script>
-<script>
+
     // 筛选器清单
-    const urlPlatformList = ["全部", 'http://www.cnhan.com/hyzx/', 'http://www.cnhan.com/shantui/', 'http://www.cnhan.com/pinfo/', 'http://www.heze.cn/info', 'http://www.heze.cn/qiye/']
+    const urlPlatformList = ["全部", 'http://cn.sonhoo.com/wukong/', 'http://www.cnhan.com/hyzx/',
+        'http://www.cnhan.com/shantui/', 'http://www.cnhan.com/pinfo/', 'http://www.heze.cn/info',
+        'http://www.heze.cn/qiye/'
+    ]
 
     // 页面首次加载
-    let urlPlatformListHtml = '<div class="weui-cell__bd">选择来源平台<select class="weui-select selectItem" name="selectUrlPlatform"  onclick=getSelectValue(this) >'
-    for (let i in urlPlatformList) {
+    let urlPlatformListHtml =
+            '<div class="weui-cell__bd">选择来源平台<select class="weui-select selectItem" name="selectUrlPlatform"  onclick=getSelectValue(this) >'
+    for (const i in urlPlatformList) {
         let selectedStr = ''
         if (i === 0) {
             selectedStr = 'selected'
         }
-        urlPlatformListHtml += '<option  value="' + i  + '" '+selectedStr+' >' + urlPlatformList[i] + '</option>'
+        urlPlatformListHtml += '<option  value="' + i + '" ' + selectedStr + ' >' + urlPlatformList[i] + '</option>'
     }
     urlPlatformListHtml += '</select></div>'
     document.getElementById('urlPlatformListHtml').innerHTML = urlPlatformListHtml
@@ -93,12 +108,11 @@
 
     // 监听筛选的click事件
     // 获取筛选器的选中值
-    const getSelectValue = (t) =>
-    {
+    const getSelectValue = (t) => {
         const selectName = t.name
         const opts = t.options
         let catchI = 0
-        for (let i in opts) {
+        for (const i in opts) {
             if (opts[i].selected == true) {
                 catchI = i
                 console.log(catchI)
@@ -107,7 +121,7 @@
         }
         //  筛选器可扩展为多个
         switch (selectName) {
-            case    'selectUrlPlatform':
+            case 'selectUrlPlatform':
                 selectOptionUrlPlatform = catchI
         }
         // 事件回调，过滤页面显示项目
@@ -115,10 +129,9 @@
     }
 
     // 判断项目类型
-    const displayType = (url) =>
-    {
-        for (let i in urlPlatformList) {
-            if(parseInt(i)!==0){
+    const displayType = (url) => {
+        for (const i in urlPlatformList) {
+            if (parseInt(i) !== 0) {
                 if (url.indexOf(urlPlatformList[i].slice(1)) > 0) {
                     return i
                 }
@@ -128,49 +141,67 @@
 
     // 控制display属性
     // 存在的问题：display属性的赋值与其他属性的覆盖
-    const mainRowIfDisplayByClassSelector = () =>
-    {
+    const mainRowIfDisplayByClassSelector = () => {
         if (parseInt(selectOptionUrlPlatform) === 0) {
-            let displayType = 'displayTypeInit'
-            let displaySet = document.getElementsByClassName(displayType)
-            for (let ii in displaySet) {
+            const displayType = 'displayTypeInit'
+            const displaySet = document.getElementsByClassName(displayType)
+            for (const ii in displaySet) {
                 console.log(ii)
-                document.getElementsByClassName(displayType)[ii].style = ""
+                document.getElementsByClassName(displayType)[ii].style = ''
             }
         } else {
-            for (let i in urlPlatformList) {
-                let displayType = 'displayType' + i
-                let displaySet = document.getElementsByClassName(displayType)
+            for (const i in urlPlatformList) {
+                const displayType = 'displayType' + i
+                const displaySet = document.getElementsByClassName(displayType)
                 if (selectOptionUrlPlatform !== i) {
-                    for (let ii in displaySet) {
+                    for (const ii in displaySet) {
                         document.getElementsByClassName(displayType)[ii].style = "display:none;"
                     }
                 } else {
-                    for (let ii in displaySet) {
-                        document.getElementsByClassName(displayType)[ii].style = ""
+                    for (const ii in displaySet) {
+                        document.getElementsByClassName(displayType)[ii].style = ''
                     }
                 }
             }
         }
     }
 
-</script>
-
-<script>
     let mainHtml = ''
     // 对类名赋值
-    for (let i in GO) {
-        mainHtml += '<div class="weui-cell weui-cell_swiped"><div class="weui-flex rowHover displayTypeInit displayType' + displayType(GO[i].OriginUrl) + '" ><div class="weui-flex__item"><div class="placeholder">' + (parseInt(i) + 1) + '</div></div> <div class="weui-flex__item"><div class="placeholder"><a href="' + GO[i].OriginUrl + '" target="_blank" >' + GO[i].OriginUrl.slice(7, 23) + '</a></div></div>  <div class="weui-flex__item"><div class="placeholder">' + GO[i].ComName + '</div></div><div class="weui-flex__item"><div class="placeholder">' + GO[i].TelPhone + '</div><img src="' + GO[i].TelImgbase64 + '"></div><div class="weui-flex__item"><div class="placeholder">' + GO[i].MobilePhone + '</div><img src="' + GO[i].PhoneImgbase64 + '"></div><div class="weui-flex__item"><div class="placeholder">' + GO[i].Qq + '</div></div><div class="weui-flex__item"><img src="' + GO[i].WxImgbase64 + '"></div><div class="weui-flex__item"><div class="placeholder">' + GO[i].Addr + '</div></div><div class="weui-flex__item"><a href="' + GO[i].WebSite + '" target="_blank">' + GO[i].WebSite + '</a></div></div></div>'
+    for (const i in GO) {
+        mainHtml +=
+                '<div class="weui-cell weui-cell_swiped"><div class="weui-flex rowHover displayTypeInit displayType' +
+                displayType(GO[i].OriginUrl) + '" ><div class="weui-flex__item"><div class="placeholder">' + (parseInt(i) +
+                1) + '</div></div> <div class="weui-flex__item"><div class="placeholder"><a href="' + GO[i].OriginUrl +
+                '" target="_blank" >' + GO[i].OriginUrl.slice(7, 23) +
+                '</a></div></div>  <div class="weui-flex__item"><div class="placeholder">' + GO[i].ComName +
+                '</div></div><div class="weui-flex__item"><div class="placeholder">' + GO[i].TelPhone + '</div><img src="' +
+                GO[i].TelImgbase64 + '"></div><div class="weui-flex__item"><div class="placeholder">' + GO[i].MobilePhone +
+                '</div><img src="' + GO[i].PhoneImgbase64 +
+                '"></div><div class="weui-flex__item"><div class="placeholder">' + GO[i].Qq +
+                '</div></div><div class="weui-flex__item"><img src="' + GO[i].WxImgbase64 +
+                '"></div><div class="weui-flex__item"><div class="placeholder">' + GO[i].Addr +
+                '</div></div><div class="weui-flex__item"><a href="' + GO[i].WebSite + '" target="_blank">' + GO[i].WebSite +
+                '</a></div></div></div>'
     }
     document.getElementById('initHtml').innerHTML = mainHtml
-</script>
-<script>
-    const Ymd = () =>
-    {
+
+    const Ymd = () => {
         const date = new Date()
         const m = ('0' + (date.getMonth() + 1)).slice(-2)
-        return date.getFullYear() + m + date.getDate()
+        const d = ('0' + date.getDate()).slice(-2)
+        return date.getFullYear() + m + d
     }
-    document.getElementById('goDetail').innerHTML = '<a href="/PotentialCustomerDetail/' + Ymd() + '" target="_blank"> 去详细页</a>'
+
+    const ThisDay = window.location.href.split('/').pop()
+    document.getElementById('goThisDaySummary').innerHTML = '<a href="/PotentialCustomerDetail/' + ThisDay +
+            '" target="_blank"> 去详细页</a>'
+    if (ThisDay !== Ymd()) {
+        document.getElementById('goTodayDetail').innerHTML = '<a href="/PotentialCustomerDetail/' + Ymd() +
+                '" target="_blank"> 去今日详细页</a>'
+        document.getElementById('goTodaySummary').innerHTML = '<a href="/PotentialCustomer/' + Ymd() +
+                '" target="_blank"> 去今日简页</a>'
+    }
 </script>
+
 {{end}}
