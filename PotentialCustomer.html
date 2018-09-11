@@ -20,62 +20,62 @@
 </style>
 
 <body style="margin:1em ;">
-<div class="weui-cells page__category-content">
-    <div class="page__hd">
-        <h1 class="page__title">潜在客户信息</h1>
-        <p class="page__desc">潜在客户信息</p>
-    </div>
-</div>
-
-<div id="urlPlatformListHtml" class="weui-cell weui-cell_select">
-</div>
-
-<div class="weui-cells page__category-content">
-    <div class="weui-cell weui-cell_swiped">
-        <div class="weui-flex">
-            <div class="weui-flex__item">
-                <h3 class="title">序号</h3>
-            </div>
-            <div class="weui-flex__item">
-                <h3 class="title">来源URL</h3>
-            </div>
-            <div class="weui-flex__item">
-                <h3 class="title">公司名称</h3>
-            </div>
-            <div class="weui-flex__item">
-                <h3 class="title">电话号码</h3>
-            </div>
-            <div class="weui-flex__item">
-                <h3 class="title">手机号码</h3>
-            </div>
-            <div class="weui-flex__item">
-                <h3 class="title">QQ号码</h3>
-            </div>
-            <div class="weui-flex__item">
-                <h3 class="title">微信二维码</h3>
-            </div>
-            <div class="weui-flex__item">
-                <h3 class="title">地址</h3>
-            </div>
-            <div class="weui-flex__item">
-                <h3 class="title">网址</h3>
-            </div>
+    <div class="weui-cells page__category-content">
+        <div class="page__hd">
+            <h1 class="page__title">潜在客户信息</h1>
+            <p class="page__desc">潜在客户信息</p>
         </div>
     </div>
-    <div id="initHtml">
+
+    <div id="urlPlatformListHtml" class="weui-cell weui-cell_select">
     </div>
-</div>
-<div class="weui-cells page__category-content">
-    <div class="page__hd">
-        <div id="goThisDaySummary"></div>
+
+    <div class="weui-cells page__category-content">
+        <div class="weui-cell weui-cell_swiped">
+            <div class="weui-flex">
+                <div class="weui-flex__item">
+                    <h3 class="title">序号</h3>
+                </div>
+                <div class="weui-flex__item">
+                    <h3 class="title">来源URL</h3>
+                </div>
+                <div class="weui-flex__item">
+                    <h3 class="title">公司名称</h3>
+                </div>
+                <div class="weui-flex__item">
+                    <h3 class="title">电话号码</h3>
+                </div>
+                <div class="weui-flex__item">
+                    <h3 class="title">手机号码</h3>
+                </div>
+                <div class="weui-flex__item">
+                    <h3 class="title">QQ号码</h3>
+                </div>
+                <div class="weui-flex__item">
+                    <h3 class="title">微信二维码</h3>
+                </div>
+                <div class="weui-flex__item">
+                    <h3 class="title">地址</h3>
+                </div>
+                <div class="weui-flex__item">
+                    <h3 class="title">网址</h3>
+                </div>
+            </div>
+        </div>
+        <div id="initHtml">
+        </div>
     </div>
-    <div class="page__hd">
-        <div id="goTodayDetail"></div>
+    <div class="weui-cells page__category-content">
+        <div class="page__hd">
+            <div id="goThisDaySummary"></div>
+        </div>
+        <div class="page__hd">
+            <div id="goTodayDetail"></div>
+        </div>
+        <div class="page__hd">
+            <div id="goTodaySummary"></div>
+        </div>
     </div>
-    <div class="page__hd">
-        <div id="goTodaySummary"></div>
-    </div>
-</div>
 
 
 </body>
@@ -92,7 +92,7 @@
 
     // 页面首次加载
     let urlPlatformListHtml =
-            '<div class="weui-cell__bd">选择来源平台<select class="weui-select selectItem" name="selectUrlPlatform"  onclick=getSelectValue(this) >'
+        '<div class="weui-cell__bd">选择来源平台<select class="weui-select selectItem" name="selectUrlPlatform"  onclick=getSelectValue(this) >'
     for (const i in urlPlatformList) {
         let selectedStr = ''
         if (i === 0) {
@@ -101,7 +101,15 @@
         urlPlatformListHtml += '<option  value="' + i + '" ' + selectedStr + ' >' + urlPlatformList[i] + '</option>'
     }
     urlPlatformListHtml += '</select></div>'
-    document.getElementById('urlPlatformListHtml').innerHTML = urlPlatformListHtml
+
+    const $ID = (p) => {
+        return document.getElementById(p)
+    }
+    const $CLASS = (p) => {
+        return document.getElementsByClassName(p)
+    }
+
+    $ID('urlPlatformListHtml').innerHTML = urlPlatformListHtml
 
     // 筛选器选择值初始化
     let selectOptionUrlPlatform = 0
@@ -144,22 +152,22 @@
     const mainRowIfDisplayByClassSelector = () => {
         if (parseInt(selectOptionUrlPlatform) === 0) {
             const displayType = 'displayTypeInit'
-            const displaySet = document.getElementsByClassName(displayType)
+            const displaySet = $CLASS(displayType)
             for (const ii in displaySet) {
                 console.log(ii)
-                document.getElementsByClassName(displayType)[ii].style = ''
+                $CLASS(displayType)[ii].style = ''
             }
         } else {
             for (const i in urlPlatformList) {
                 const displayType = 'displayType' + i
-                const displaySet = document.getElementsByClassName(displayType)
+                const displaySet = $CLASS(displayType)
                 if (selectOptionUrlPlatform !== i) {
                     for (const ii in displaySet) {
-                        document.getElementsByClassName(displayType)[ii].style = "display:none;"
+                        $CLASS(displayType)[ii].style = "display:none;"
                     }
                 } else {
                     for (const ii in displaySet) {
-                        document.getElementsByClassName(displayType)[ii].style = ''
+                        $CLASS(displayType)[ii].style = ''
                     }
                 }
             }
@@ -170,21 +178,21 @@
     // 对类名赋值
     for (const i in GO) {
         mainHtml +=
-                '<div class="weui-cell weui-cell_swiped"><div class="weui-flex rowHover displayTypeInit displayType' +
-                displayType(GO[i].OriginUrl) + '" ><div class="weui-flex__item"><div class="placeholder">' + (parseInt(i) +
+            '<div class="weui-cell weui-cell_swiped"><div class="weui-flex rowHover displayTypeInit displayType' +
+            displayType(GO[i].OriginUrl) + '" ><div class="weui-flex__item"><div class="placeholder">' + (parseInt(i) +
                 1) + '</div></div> <div class="weui-flex__item"><div class="placeholder"><a href="' + GO[i].OriginUrl +
-                '" target="_blank" >' + GO[i].OriginUrl.slice(7, 23) +
-                '</a></div></div>  <div class="weui-flex__item"><div class="placeholder">' + GO[i].ComName +
-                '</div></div><div class="weui-flex__item"><div class="placeholder">' + GO[i].TelPhone + '</div><img src="' +
-                GO[i].TelImgbase64 + '"></div><div class="weui-flex__item"><div class="placeholder">' + GO[i].MobilePhone +
-                '</div><img src="' + GO[i].PhoneImgbase64 +
-                '"></div><div class="weui-flex__item"><div class="placeholder">' + GO[i].Qq +
-                '</div></div><div class="weui-flex__item"><img src="' + GO[i].WxImgbase64 +
-                '"></div><div class="weui-flex__item"><div class="placeholder">' + GO[i].Addr +
-                '</div></div><div class="weui-flex__item"><a href="' + GO[i].WebSite + '" target="_blank">' + GO[i].WebSite +
-                '</a></div></div></div>'
+            '" target="_blank" >' + GO[i].OriginUrl.slice(7, 23) +
+            '</a></div></div>  <div class="weui-flex__item"><div class="placeholder">' + GO[i].ComName +
+            '</div></div><div class="weui-flex__item"><div class="placeholder">' + GO[i].TelPhone + '</div><img src="' +
+            GO[i].TelImgbase64 + '"></div><div class="weui-flex__item"><div class="placeholder">' + GO[i].MobilePhone +
+            '</div><img src="' + GO[i].PhoneImgbase64 +
+            '"></div><div class="weui-flex__item"><div class="placeholder">' + GO[i].Qq +
+            '</div></div><div class="weui-flex__item"><img src="' + GO[i].WxImgbase64 +
+            '"></div><div class="weui-flex__item"><div class="placeholder">' + GO[i].Addr +
+            '</div></div><div class="weui-flex__item"><a href="' + GO[i].WebSite + '" target="_blank">' + GO[i].WebSite +
+            '</a></div></div></div>'
     }
-    document.getElementById('initHtml').innerHTML = mainHtml
+    $ID('initHtml').innerHTML = mainHtml
 
     const Ymd = () => {
         const date = new Date()
@@ -194,13 +202,13 @@
     }
 
     const ThisDay = window.location.href.split('/').pop()
-    document.getElementById('goThisDaySummary').innerHTML = '<a href="/PotentialCustomerDetail/' + ThisDay +
-            '" target="_blank"> 去详细页</a>'
+    $ID('goThisDaySummary').innerHTML = '<a href="/PotentialCustomerDetail/' + ThisDay +
+        '" target="_blank"> 去详细页</a>'
     if (ThisDay !== Ymd()) {
-        document.getElementById('goTodayDetail').innerHTML = '<a href="/PotentialCustomerDetail/' + Ymd() +
-                '" target="_blank"> 去今日详细页</a>'
-        document.getElementById('goTodaySummary').innerHTML = '<a href="/PotentialCustomer/' + Ymd() +
-                '" target="_blank"> 去今日简页</a>'
+        $ID('goTodayDetail').innerHTML = '<a href="/PotentialCustomerDetail/' + Ymd() +
+            '" target="_blank"> 去今日详细页</a>'
+        $ID('goTodaySummary').innerHTML = '<a href="/PotentialCustomer/' + Ymd() +
+            '" target="_blank"> 去今日简页</a>'
     }
 </script>
 
